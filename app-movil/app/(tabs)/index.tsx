@@ -1,8 +1,9 @@
 // ============================================================
 // PANTALLA DE INICIO — Grid de películas (Estreno / Preventa / Próximamente)
 // ============================================================
-// Esta pantalla le pregunta al backend (FastAPI) qué películas hay,
-// y las pinta en una cuadrícula de 2 columnas, como en el mockup.
+// Versión 6: mismo efecto de vidrio esmerilado (blur) del header que
+// gustó en la v5, pero con la distribución de la v4 — logo a la
+// izquierda, pills + botón "Log in" a la derecha, todo en una sola fila.
 // ============================================================
 
 import { useEffect, useState } from "react";
@@ -14,23 +15,29 @@ import {
   StyleSheet,
   ActivityIndicator,
   SafeAreaView,
+  TouchableOpacity,
 } from "react-native";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 // ------------------------------------------------------------
 // CONFIGURACIÓN: dirección de tu backend
 // ------------------------------------------------------------
-// IMPORTANTE: "localhost" o "127.0.0.1" NO funcionan aquí, porque
-// el celular es un dispositivo DISTINTO al computador. Necesita la
-// dirección de tu PC dentro de la red WiFi (la misma que viste en
-// Expo Go: "Connected to expo-cli 192.168.1.13:8081").
-//
-// Cambia el número de abajo si tu PC tiene otra dirección IP.
 const API_URL = "http://192.168.1.13:8000";
 
 // ------------------------------------------------------------
-// TIPOS: le decimos a TypeScript cómo se ve cada película
-// que nos devuelve el backend (esto ayuda a detectar errores
-// antes de que la app se ejecute, no solo cuando ya falló)
+// PALETA DE COLORES (confirmados desde tailwind.config.ts del export)
+// ------------------------------------------------------------
+const COLORES = {
+  fondo: "#1A2232",
+  primario: "#FF8036",
+  primarioOscuro: "#FC6D19",
+  atenuado: "#637394",
+};
+
+// ------------------------------------------------------------
+// TIPOS
 // ------------------------------------------------------------
 type Pelicula = {
   id: number;
@@ -45,69 +52,121 @@ type Pelicula = {
 };
 
 // ------------------------------------------------------------
-// FUNCIÓN AUXILIAR: convierte "2026-08-20" en "20 AGO"
-// (más fácil de leer que la fecha completa)
+// FUNCIÓN AUXILIAR: "2026-08-20" -> "20 AGO"
 // ------------------------------------------------------------
 function formatearFecha(fechaISO: string): string {
   const meses = [
     "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
     "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
   ];
-  const [anio, mes, dia] = fechaISO.split("-");
+  const [, mes, dia] = fechaISO.split("-");
   return `${parseInt(dia, 10)} ${meses[parseInt(mes, 10) - 1]}`;
 }
 
 // ------------------------------------------------------------
-// COMPONENTE: la etiqueta de color (ESTRENO / PREVENTA / PROXIMAMENTE)
+// COMPONENTE: header — vidrio esmerilado (BlurView), con logo a la
+// izquierda y pills + Log in a la derecha, como estaba antes.
 // ------------------------------------------------------------
-function Etiqueta({ pelicula }: { pelicula: Pelicula }) {
-  if (pelicula.tipo === "PREVENTA" && pelicula.fecha_estreno) {
-    return (
-      <View style={[styles.etiqueta, styles.etiquetaPreventa]}>
-        <Text style={styles.etiquetaTexto}>
-          PREVENTA · {formatearFecha(pelicula.fecha_estreno)}
-        </Text>
+function CinemaHeader() {
+  return (
+    <View style={styles.barraFixedContainer}>
+      {/* El BlurView da el efecto de vidrio; va DETRÁS del contenido */}
+      <BlurView intensity={40} tint="dark" style={styles.blurFondo} />
+
+      <View style={styles.barraSuperior}>
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+
+        <View style={styles.accionesBarra}>
+          <View style={styles.pill}>
+            <Ionicons name="location-outline" size={20} color={COLORES.atenuado} />
+            <Text style={styles.pillTexto}>Cali</Text>
+          </View>
+
+          <View style={styles.pill}>
+            <MaterialIcons name="translate" size={20} color={COLORES.atenuado} />
+            <Text style={styles.pillTexto}>Es</Text>
+          </View>
+
+          <LinearGradient
+            colors={[COLORES.primario, COLORES.primarioOscuro]}
+            style={styles.botonLogin}
+          >
+            <TouchableOpacity>
+              <Text style={styles.botonLoginTexto}>Log in</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
       </View>
-    );
-  }
-  if (pelicula.tipo === "PROXIMAMENTE") {
-    return (
-      <View style={[styles.etiqueta, styles.etiquetaProximamente]}>
-        <Text style={styles.etiquetaTexto}>PRÓXIMAMENTE</Text>
-      </View>
-    );
-  }
-  // Si es "ESTRENO", no mostramos etiqueta (así se ve como en el mockup original)
-  return null;
+    </View>
+  );
 }
 
 // ------------------------------------------------------------
-// COMPONENTE: una tarjeta individual del grid (un póster + info)
+// COMPONENTE: título + lupa
 // ------------------------------------------------------------
-function TarjetaPelicula({ pelicula }: { pelicula: Pelicula }) {
+function TituloSeccion() {
+  return (
+    <View style={styles.tituloFila}>
+      <Text style={styles.titulo}>Ahora en Cine</Text>
+      <TouchableOpacity style={styles.botonBuscar}>
+        <Ionicons name="search-outline" size={24} color={COLORES.atenuado} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ------------------------------------------------------------
+// COMPONENTE: MovieCard — chip naranja para estrenos, chip de vidrio
+// (BlurView) para preventas/próximamente.
+// ------------------------------------------------------------
+function MovieCard({ pelicula }: { pelicula: Pelicula }) {
+  const esChipNaranja = pelicula.tipo === "ESTRENO";
+
+  let textoChip = pelicula.clasificacion ?? "";
+  if (pelicula.tipo === "PREVENTA" && pelicula.fecha_estreno) {
+    textoChip = formatearFecha(pelicula.fecha_estreno);
+  } else if (pelicula.tipo === "PROXIMAMENTE") {
+    textoChip = "PRONTO";
+  }
+
   return (
     <View style={styles.tarjeta}>
       <View style={styles.posterContenedor}>
         {pelicula.cover_image_url ? (
-          // Si la película tiene póster guardado, lo mostramos
           <Image
             source={{ uri: pelicula.cover_image_url }}
             style={styles.poster}
             resizeMode="cover"
           />
         ) : (
-          // Si no hay póster (pasa con datos viejos), mostramos un cuadro gris
-          // en vez de dejar un hueco feo o que la app se rompa
           <View style={[styles.poster, styles.posterVacio]}>
             <Text style={styles.posterVacioTexto}>Sin imagen</Text>
           </View>
         )}
-        <Etiqueta pelicula={pelicula} />
+
+        {esChipNaranja ? (
+          <View style={styles.chipNaranja}>
+            <Text style={styles.chipTexto}>{textoChip}</Text>
+          </View>
+        ) : (
+          <BlurView intensity={40} tint="dark" style={styles.chipVidrio}>
+            <Text style={styles.chipTexto}>{textoChip}</Text>
+          </BlurView>
+        )}
       </View>
-      <Text style={styles.titulo} numberOfLines={1}>
-        {pelicula.nombre}
-      </Text>
-      <Text style={styles.genero}>{pelicula.genero ?? ""}</Text>
+
+      <View style={styles.infoTarjeta}>
+        <Text style={styles.tituloTarjeta} numberOfLines={1}>
+          {pelicula.nombre}
+        </Text>
+        <Text style={styles.generoTarjeta} numberOfLines={1}>
+          {pelicula.genero ?? ""}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -116,15 +175,10 @@ function TarjetaPelicula({ pelicula }: { pelicula: Pelicula }) {
 // PANTALLA PRINCIPAL
 // ------------------------------------------------------------
 export default function PantallaInicio() {
-  // "peliculas" guarda la lista que llega del backend.
-  // "cargando" nos dice si todavía estamos esperando la respuesta.
-  // "error" guarda un mensaje si algo salió mal (para mostrarlo, no ocultarlo).
   const [peliculas, setPeliculas] = useState<Pelicula[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect con [] al final = "corre esto UNA sola vez, cuando la
-  // pantalla aparece por primera vez" (no cada vez que algo cambia).
   useEffect(() => {
     fetch(`${API_URL}/home`)
       .then((respuesta) => {
@@ -138,18 +192,15 @@ export default function PantallaInicio() {
       .finally(() => setCargando(false));
   }, []);
 
-  // Mientras esperamos la respuesta del backend, mostramos un círculo girando
   if (cargando) {
     return (
       <SafeAreaView style={styles.centrado}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.textoAyuda}>Cargando cartelera...</Text>
       </SafeAreaView>
     );
   }
 
-  // Si algo falló (backend apagado, IP incorrecta, etc.), lo decimos
-  // claramente en vez de mostrar una pantalla en blanco sin explicación
   if (error) {
     return (
       <SafeAreaView style={styles.centrado}>
@@ -163,57 +214,154 @@ export default function PantallaInicio() {
     );
   }
 
-  // Si todo salió bien, mostramos el grid de 2 columnas
   return (
-    <SafeAreaView style={styles.contenedor}>
-      <Text style={styles.encabezado}>¿Dónde la Veo?</Text>
+    <View style={styles.contenedor}>
       <FlatList
         data={peliculas}
         keyExtractor={(pelicula) => pelicula.slug}
         numColumns={2}
         contentContainerStyle={styles.grid}
-        renderItem={({ item }) => <TarjetaPelicula pelicula={item} />}
+        columnWrapperStyle={styles.fila}
+        ListHeaderComponent={<TituloSeccion />}
+        renderItem={({ item }) => <MovieCard pelicula={item} />}
       />
-    </SafeAreaView>
+      <CinemaHeader />
+    </View>
   );
 }
 
 // ------------------------------------------------------------
-// ESTILOS (el "CSS" de React Native)
+// ESTILOS
 // ------------------------------------------------------------
 const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: "#0d1117",
+    backgroundColor: COLORES.fondo,
   },
   centrado: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#0d1117",
+    backgroundColor: COLORES.fondo,
     padding: 20,
   },
-  encabezado: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-    padding: 16,
+
+  // --- Barra superior fija: mismas medidas/posición que la v4 ---
+  barraFixedContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 108,
+    zIndex: 10,
+    overflow: "hidden", // para que el blur no se salga de esta caja
   },
-  grid: {
+  blurFondo: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  barraSuperior: {
+    position: "absolute",
+    top: 44, // debajo del status bar del celular
+    left: 0,
+    right: 0,
+    height: 64,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  logo: {
+    width: 85,
+    height: 85,
+  },
+  accionesBarra: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     paddingHorizontal: 8,
+    paddingVertical: 16,
+    borderRadius: 8,
+  },
+  pillTexto: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  botonLogin: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: COLORES.primario,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  botonLoginTexto: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  // --- Título de sección ---
+  tituloFila: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 124, // deja espacio bajo la barra fija (108) + margen
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  titulo: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  botonBuscar: {
+    height: 40,
+    width: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // --- Grid y tarjetas ---
+  grid: {
+    paddingHorizontal: 16,
+    paddingBottom: 64,
+  },
+  fila: {
+    gap: 16,
+    marginBottom: 16,
   },
   tarjeta: {
     flex: 1,
-    margin: 8,
-    maxWidth: "46%",
+    gap: 8,
   },
   posterContenedor: {
     position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+    shadowColor: "rgb(7,9,13)",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 40,
+    elevation: 8,
   },
   poster: {
     width: "100%",
-    aspectRatio: 2 / 3,
-    borderRadius: 8,
+    aspectRatio: 164 / 230,
   },
   posterVacio: {
     backgroundColor: "#333",
@@ -224,36 +372,47 @@ const styles = StyleSheet.create({
     color: "#888",
     fontSize: 12,
   },
-  etiqueta: {
+  chipNaranja: {
     position: "absolute",
-    bottom: 6,
-    left: 6,
-    right: 6,
+    top: 4,
+    right: 4,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+    backgroundColor: COLORES.primario,
+    shadowColor: COLORES.primario,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  etiquetaPreventa: {
-    backgroundColor: "#e67e22",
+  chipVidrio: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    overflow: "hidden",
   },
-  etiquetaProximamente: {
-    backgroundColor: "#555",
-  },
-  etiquetaTexto: {
+  chipTexto: {
     color: "white",
-    fontSize: 10,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  titulo: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 6,
-  },
-  genero: {
-    color: "#999",
     fontSize: 12,
+    fontWeight: "700",
   },
+  infoTarjeta: {
+    gap: 4,
+  },
+  tituloTarjeta: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  generoTarjeta: {
+    color: COLORES.atenuado,
+    fontSize: 14,
+  },
+
   textoError: {
     color: "#e74c3c",
     fontSize: 16,
@@ -262,7 +421,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   textoAyuda: {
-    color: "#999",
+    color: COLORES.atenuado,
     fontSize: 13,
     marginTop: 8,
     textAlign: "center",

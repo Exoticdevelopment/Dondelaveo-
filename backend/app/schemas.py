@@ -40,9 +40,9 @@ class CarteleraCine(BaseModel):
     fecha: str
     peliculas: List[FuncionesPorPelicula]
 
-
 class ComparacionItem(BaseModel):
     cine: Cine
+    pelicula_nombre: str
     hora: str
     formato: Optional[str] = None
     idioma: Optional[str] = None

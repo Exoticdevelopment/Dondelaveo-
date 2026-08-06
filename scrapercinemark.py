@@ -108,7 +108,7 @@ def procesar_cine(cine, ciudad_nombre, fecha):
         conn, id=cine_id, nombre=cine["Name"], ciudad=ciudad_nombre,
         latitud=float(cine["Latitude"]) if cine["Latitude"] else None,
         longitud=float(cine["Longitude"]) if cine["Longitude"] else None,
-        company_id=company_id, slug=slug,
+        company_id=company_id, slug=slug, cadena="Cinemark",
     )
     conn.commit()
 

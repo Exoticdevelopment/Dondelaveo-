@@ -1,7 +1,7 @@
 """
-Backend del comparador de cines (Cinemark Colombia).
+Backend del comparador de cines (Cinemark Colombia + Izi Movie).
 
-Lee de cines.db (poblada por el scraper). Nunca escribe en la base.
+Lee de cines.db (poblada por los scrapers). Nunca escribe en la base.
 
 Ejecutar localmente:
     uvicorn app.main:app --reload
@@ -10,6 +10,9 @@ Documentación interactiva automática en:
     http://127.0.0.1:8000/docs
 """
 
+import re
+import unicodedata
+import difflib
 from datetime import date
 from typing import Optional
 
@@ -24,7 +27,7 @@ from .schemas import (
 
 app = FastAPI(
     title="Comparador de Cines API",
-    description="Compara cartelera, horarios y precios entre cines Cinemark Colombia.",
+    description="Compara cartelera, horarios y precios entre cines Cinemark Colombia e Izi Movie.",
     version="0.1.0",
 )
 
@@ -41,6 +44,66 @@ app.add_middleware(
 def _hoy():
     return date.today().isoformat()
 
+def _normalizar_titulo(texto: str) -> str:
+    """Limpia un título para poder compararlo: sin tildes, mayúsculas ni puntuación."""
+    texto = texto.lower().strip()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = "".join(c for c in texto if not unicodedata.combining(c))
+    texto = re.sub(r"[^a-z0-9\s]", " ", texto)  # espacio, no borrar (evita pegar palabras)
+    texto = re.sub(r"\s+", " ", texto).strip()
+    return texto
+
+
+def _son_la_misma_pelicula(nombre1: str, nombre2: str, umbral: float = 0.82) -> bool:
+    """
+    Compara dos títulos de película (posiblemente de cadenas distintas,
+    con nombres escritos de forma distinta) y decide si son la misma
+    película, sin necesitar una lista manual de equivalencias.
+
+    Usa dos reglas:
+    1) Similitud letra por letra (para variaciones tipo tildes/orden,
+       ej. "Spiderman Nuevo Dia" vs "Spiderman: Un Nuevo Día").
+    2) Si un título es una versión recortada del otro (ej. "Bajo Presión"
+       vs "El Día D: Bajo Presión"), revisamos si TODAS las palabras del
+       título más corto aparecen dentro del más largo.
+    """
+    a, b = _normalizar_titulo(nombre1), _normalizar_titulo(nombre2)
+
+    if difflib.SequenceMatcher(None, a, b).ratio() >= umbral:
+        return True
+
+    palabras_a, palabras_b = set(a.split()), set(b.split())
+    menor, mayor = (palabras_a, palabras_b) if len(palabras_a) <= len(palabras_b) else (palabras_b, palabras_a)
+    # Exigimos al menos 2 palabras en el título corto, para no confundir
+    # dos películas distintas que por casualidad compartan una sola palabra.
+    if len(menor) >= 2 and menor.issubset(mayor):
+        return True
+
+    return False
+
+def _agrupar_peliculas_duplicadas(filas):
+    """
+    Recibe filas de la tabla 'peliculas' (posiblemente con la MISMA película
+    repetida por venir de cadenas distintas, ej. "Spiderman" en Cinemark
+    Y en Izi Movie) y las agrupa en "clusters" de películas equivalentes,
+    usando la misma comparación automática de títulos que usa /comparar.
+
+    Devuelve una lista de clusters; cada cluster es una lista de filas
+    que representan la MISMA película en distintas cadenas.
+    """
+    clusters = []
+    for fila in filas:
+        encontro_cluster = False
+        for cluster in clusters:
+            representante = cluster[0]
+            if _son_la_misma_pelicula(representante["nombre"], fila["nombre"]):
+                cluster.append(fila)
+                encontro_cluster = True
+                break
+        if not encontro_cluster:
+            clusters.append([fila])
+    return clusters
+
 
 def _row_a_cine(row, lat=None, lon=None):
     d = None
@@ -49,6 +112,7 @@ def _row_a_cine(row, lat=None, lon=None):
     return Cine(
         id=row["id"], nombre=row["nombre"], ciudad=row["ciudad"],
         latitud=row["latitud"], longitud=row["longitud"], slug=row["slug"],
+        cadena=row["cadena"] if "cadena" in row.keys() else None,
         distancia_km=d,
     )
 
@@ -145,33 +209,45 @@ def comparar_precios(
 ):
     """
     El endpoint central del comparador: para una película y fecha dadas,
-    devuelve todas las funciones en todos los cines, ordenadas de más
-    barata a más cara. Si se manda lat/lon, incluye distancia a cada cine.
+    devuelve todas las funciones en todos los cines (de CUALQUIER cadena
+    cuyo título coincida automáticamente), ordenadas de más barata a más
+    cara. Si se manda lat/lon, incluye distancia a cada cine.
     """
     conn = get_conn()
     try:
-        pelicula = conn.execute("SELECT id FROM peliculas WHERE slug = ?", (slug,)).fetchone()
+        pelicula = conn.execute("SELECT id, nombre FROM peliculas WHERE slug = ?", (slug,)).fetchone()
         if not pelicula:
             raise HTTPException(404, f"Película '{slug}' no encontrada")
 
+        # Buscamos TODAS las películas (de cualquier cadena) cuyo nombre
+        # coincida automáticamente con la que se pidió, sin lista manual.
+        todas_las_peliculas = conn.execute("SELECT id, nombre FROM peliculas").fetchall()
+        ids_coincidentes = [
+            p["id"] for p in todas_las_peliculas
+            if _son_la_misma_pelicula(pelicula["nombre"], p["nombre"])
+        ]
+        placeholders = ",".join("?" * len(ids_coincidentes))
+
         rows = conn.execute(
-            """
+            f"""
             SELECT f.session_id, f.hora, f.formato, f.idioma, f.asientos_disponibles,
-                   pr.precio_cop, c.*
+                   pr.precio_cop, c.*, p.nombre as pelicula_nombre
             FROM funciones f
             JOIN cines c ON c.id = f.cine_id
+            JOIN peliculas p ON p.id = f.pelicula_id
             LEFT JOIN precios pr ON pr.session_id = f.session_id
-            WHERE f.pelicula_id = ? AND f.fecha = ?
+            WHERE f.pelicula_id IN ({placeholders}) AND f.fecha = ?
             ORDER BY pr.precio_cop ASC
             """,
-            (pelicula["id"], fecha),
+            (*ids_coincidentes, fecha),
         ).fetchall()
 
         resultado = []
         for r in rows:
             cine = _row_a_cine(r, lat, lon)
             resultado.append(ComparacionItem(
-                cine=cine, hora=r["hora"], formato=r["formato"], idioma=r["idioma"],
+                cine=cine, pelicula_nombre=r["pelicula_nombre"],
+                hora=r["hora"], formato=r["formato"], idioma=r["idioma"],
                 precio_cop=r["precio_cop"], asientos_disponibles=r["asientos_disponibles"],
             ))
         return resultado
@@ -232,6 +308,11 @@ def home(fecha: str = Query(default_factory=_hoy)):
     Lista de películas para la pantalla principal de la app, con su tipo
     (ESTRENO / PREVENTA / PROXIMAMENTE) calculado a partir de la fecha
     más temprana en la que cada película tiene función guardada.
+
+    IMPORTANTE: una misma película puede existir varias veces en la base
+    (una vez por cada cadena que la tenga, ej. Cinemark e Izi Movie).
+    Antes de responder, agrupamos automáticamente esas repeticiones para
+    que la app muestre cada película UNA sola vez.
     """
     conn = get_conn()
     try:
@@ -246,21 +327,35 @@ def home(fecha: str = Query(default_factory=_hoy)):
             """
         ).fetchall()
 
+        clusters = _agrupar_peliculas_duplicadas(rows)
+
         resultado = []
-        for r in rows:
-            fecha_min = r["fecha_min"]
-            if fecha_min is None:
+        for cluster in clusters:
+            # Representante: preferimos la fila que sí tenga póster,
+            # para no perder la imagen si una de las cadenas no la trae.
+            representante = next((f for f in cluster if f["cover_image_url"]), cluster[0])
+
+            # La fecha de estreno real es la más temprana entre TODAS las
+            # cadenas que tengan esta película (si Izi Movie la estrena
+            # antes que Cinemark, esa es la fecha que debe mostrarse).
+            fechas_min = [f["fecha_min"] for f in cluster if f["fecha_min"] is not None]
+            fecha_min_global = min(fechas_min) if fechas_min else None
+
+            if fecha_min_global is None:
                 tipo, fecha_estreno = "PROXIMAMENTE", None
-            elif fecha_min <= fecha:
+            elif fecha_min_global <= fecha:
                 tipo, fecha_estreno = "ESTRENO", None
             else:
-                tipo, fecha_estreno = "PREVENTA", fecha_min
+                tipo, fecha_estreno = "PREVENTA", fecha_min_global
 
             resultado.append(HomeItem(
-                id=r["id"], nombre=r["nombre"], slug=r["slug"], genero=r["genero"],
-                clasificacion=r["clasificacion"], duracion_min=r["duracion_min"],
-                cover_image_url=r["cover_image_url"], tipo=tipo, fecha_estreno=fecha_estreno,
+                id=representante["id"], nombre=representante["nombre"], slug=representante["slug"],
+                genero=representante["genero"], clasificacion=representante["clasificacion"],
+                duracion_min=representante["duracion_min"], cover_image_url=representante["cover_image_url"],
+                tipo=tipo, fecha_estreno=fecha_estreno,
             ))
+
+        resultado.sort(key=lambda item: item.nombre)
         return resultado
     finally:
         conn.close()

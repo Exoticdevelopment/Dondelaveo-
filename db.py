@@ -31,7 +31,8 @@ def crear_tablas():
         latitud REAL,
         longitud REAL,
         company_id TEXT,
-        slug TEXT
+        slug TEXT,
+        cadena TEXT
     );
 
   CREATE TABLE IF NOT EXISTS peliculas (
@@ -64,16 +65,16 @@ def crear_tablas():
     conn.commit()
     conn.close()
 
-
-def upsert_cine(conn, id, nombre, ciudad, latitud, longitud, company_id, slug):
+def upsert_cine(conn, id, nombre, ciudad, latitud, longitud, company_id, slug, cadena):
     conn.execute("""
-        INSERT INTO cines (id, nombre, ciudad, latitud, longitud, company_id, slug)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO cines (id, nombre, ciudad, latitud, longitud, company_id, slug, cadena)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             nombre=excluded.nombre, ciudad=excluded.ciudad,
             latitud=excluded.latitud, longitud=excluded.longitud,
-            company_id=excluded.company_id, slug=excluded.slug
-    """, (id, nombre, ciudad, latitud, longitud, company_id, slug))
+            company_id=excluded.company_id, slug=excluded.slug,
+            cadena=excluded.cadena
+    """, (id, nombre, ciudad, latitud, longitud, company_id, slug, cadena))
 
 
 def upsert_pelicula(conn, nombre, slug, duracion_min, clasificacion, genero, cover_image_url=None):
