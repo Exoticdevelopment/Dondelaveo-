@@ -1,9 +1,9 @@
 // ============================================================
 // PANTALLA DE INICIO — Grid de películas (Estreno / Preventa / Próximamente)
 // ============================================================
-// Versión 6: mismo efecto de vidrio esmerilado (blur) del header que
-// gustó en la v5, pero con la distribución de la v4 — logo a la
-// izquierda, pills + botón "Log in" a la derecha, todo en una sola fila.
+// Medidas, colores y espaciados sincronizados con el diseño de Figma
+// "Home / Authorized" (logo absoluto 85x85 en left:12/top:25, barra de
+// controles pegada a la derecha, grid con padding-top 124 bajo el header).
 // ============================================================
 
 import { useEffect, useState } from "react";
@@ -34,6 +34,7 @@ const COLORES = {
   primario: "#FF8036",
   primarioOscuro: "#FC6D19",
   atenuado: "#637394",
+  vidrio: "rgba(31,41,61,0.7)",
 };
 
 // ------------------------------------------------------------
@@ -71,24 +72,26 @@ function CinemaHeader() {
   return (
     <View style={styles.barraFixedContainer}>
       {/* El BlurView da el efecto de vidrio; va DETRÁS del contenido */}
-      <BlurView intensity={40} tint="dark" style={styles.blurFondo} />
+      <BlurView intensity={20} tint="dark" style={styles.blurFondo} />
 
-      <View style={styles.barraSuperior}>
+      <View style={styles.contenidoHeader}>
         <Image
           source={require("../../assets/images/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        <View style={styles.accionesBarra}>
-          <View style={styles.pill}>
-            <Ionicons name="location-outline" size={20} color={COLORES.atenuado} />
-            <Text style={styles.pillTexto}>Cali</Text>
-          </View>
+        <View style={styles.controlesFila}>
+          <View style={styles.opcionesGrupo}>
+            <View style={styles.pill}>
+              <Ionicons name="location-outline" size={20} color={COLORES.atenuado} />
+              <Text style={styles.pillTexto}>Cali</Text>
+            </View>
 
-          <View style={styles.pill}>
-            <MaterialIcons name="translate" size={20} color={COLORES.atenuado} />
-            <Text style={styles.pillTexto}>Es</Text>
+            <View style={styles.pill}>
+              <MaterialIcons name="translate" size={20} color={COLORES.atenuado} />
+              <Text style={styles.pillTexto}>Es</Text>
+            </View>
           </View>
 
           <LinearGradient
@@ -111,7 +114,7 @@ function CinemaHeader() {
 function TituloSeccion() {
   return (
     <View style={styles.tituloFila}>
-      <Text style={styles.titulo}>Ahora en Cine</Text>
+      <Text style={styles.titulo}>Now in cinemas</Text>
       <TouchableOpacity style={styles.botonBuscar}>
         <Ionicons name="search-outline" size={24} color={COLORES.atenuado} />
       </TouchableOpacity>
@@ -153,7 +156,7 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
             <Text style={styles.chipTexto}>{textoChip}</Text>
           </View>
         ) : (
-          <BlurView intensity={40} tint="dark" style={styles.chipVidrio}>
+          <BlurView intensity={20} tint="dark" style={styles.chipVidrio}>
             <Text style={styles.chipTexto}>{textoChip}</Text>
           </BlurView>
         )}
@@ -246,7 +249,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  // --- Barra superior fija: mismas medidas/posición que la v4 ---
+  // --- Barra superior fija: 108px de alto, igual que en Figma (Fixed) ---
   barraFixedContainer: {
     position: "absolute",
     top: 0,
@@ -254,7 +257,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 108,
     zIndex: 10,
-    overflow: "hidden", // para que el blur no se salga de esta caja
   },
   blurFondo: {
     position: "absolute",
@@ -262,24 +264,34 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: COLORES.vidrio,
   },
-  barraSuperior: {
-    position: "absolute",
-    top: 44, // debajo del status bar del celular
-    left: 0,
-    right: 0,
-    height: 64,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
+  // Logo posicionado igual que en Figma: left 12, top 25, 85x85
   logo: {
     width: 85,
     height: 85,
   },
-  accionesBarra: {
+
+  contenidoHeader: {
+  position: "absolute",
+  top: 44,           // debajo de la barra de estado del celular
+  left: 0,
+  right: 0,
+  height: 64,         // la barra real, donde va tu contenido
+  flexDirection: "row",
+  alignItems: "center",         // esto sí centra verticalmente, dentro de estos 64px
+  justifyContent: "space-between",
+  paddingHorizontal: 16,
+},
+
+  // Fila de controles (Cali / Es / Log in), pegada a la derecha
+  controlesFila: {
+    height: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  opcionesGrupo: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -287,9 +299,10 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 4,
+    height: 40,
     paddingHorizontal: 8,
-    paddingVertical: 16,
     borderRadius: 8,
   },
   pillTexto: {
@@ -318,13 +331,12 @@ const styles = StyleSheet.create({
   // --- Título de sección ---
   tituloFila: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 124, // deja espacio bajo la barra fija (108) + margen
-    paddingHorizontal: 16,
+    gap: 16,
     marginBottom: 16,
   },
   titulo: {
+    flex: 1,
     color: "white",
     fontSize: 24,
     fontWeight: "700",
@@ -339,6 +351,7 @@ const styles = StyleSheet.create({
   // --- Grid y tarjetas ---
   grid: {
     paddingHorizontal: 16,
+    paddingTop: 124, // 108 (barra fija) + 16 (padding del Content en Figma)
     paddingBottom: 64,
   },
   fila: {
@@ -361,7 +374,7 @@ const styles = StyleSheet.create({
   },
   poster: {
     width: "100%",
-    aspectRatio: 164 / 230,
+    height: 230,
   },
   posterVacio: {
     backgroundColor: "#333",
@@ -394,6 +407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     overflow: "hidden",
+    backgroundColor: COLORES.vidrio,
   },
   chipTexto: {
     color: "white",
