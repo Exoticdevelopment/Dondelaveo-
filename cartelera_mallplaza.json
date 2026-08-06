@@ -1,0 +1,262 @@
+{
+  "Movies": [
+    {
+      "Name": "Spiderman Nuevo Dia",
+      "SlugName": "spiderman-nuevo-dia",
+      "Duration": "145",
+      "Rating": "12-A",
+      "CorporateFilmId": "109320",
+      "Format": [
+        {
+          "LangTypes": [
+            "SUB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "BIS"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "60383",
+              "IsVisible": true,
+              "Showtime": "21:00:00",
+              "SeatsAvailable": 38,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "3D",
+            "XD"
+          ],
+          "SeatTypes": [
+            "GENERAL",
+            "DBOX"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "60376",
+              "IsVisible": true,
+              "Showtime": "18:15:00",
+              "SeatsAvailable": 136,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D",
+            "XD"
+          ],
+          "SeatTypes": [
+            "GENERAL",
+            "DBOX"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "60377",
+              "IsVisible": true,
+              "Showtime": "21:30:00",
+              "SeatsAvailable": 137,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "GENERAL",
+            "DBOX"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "60379",
+              "IsVisible": true,
+              "Showtime": "18:45:00",
+              "SeatsAvailable": 61,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            },
+            {
+              "SessionId": "60380",
+              "IsVisible": true,
+              "Showtime": "22:00:00",
+              "SeatsAvailable": 130,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "BIS"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "60382",
+              "IsVisible": false,
+              "Showtime": "17:45:00",
+              "SeatsAvailable": 28,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            },
+            {
+              "SessionId": "63559",
+              "IsVisible": true,
+              "Showtime": "20:20:00",
+              "SeatsAvailable": 9,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "3D"
+          ],
+          "SeatTypes": [
+            "GENERAL"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "63654",
+              "IsVisible": false,
+              "Showtime": "17:35:00",
+              "SeatsAvailable": 113,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "GENERAL"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "63550",
+              "IsVisible": true,
+              "Showtime": "20:00:00",
+              "SeatsAvailable": 40,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            },
+            {
+              "SessionId": "63553",
+              "IsVisible": true,
+              "Showtime": "20:40:00",
+              "SeatsAvailable": 51,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        }
+      ],
+      "CoverImageUrl": "https://assets.cinemark-core.com/5db771be04daec00076df3f5/vista/movies/6a22d1b9720d1d2a7f8d9a19/common/spiderman-nuevo-dia-109320-1780678232870",
+      "isAlertClassificationEnable": false,
+      "alertClassificationMessage": "",
+      "isSaleConditionEnable": false,
+      "saleConditionMessage": "",
+      "Order": 1,
+      "GenreName": "Acción"
+    },
+    {
+      "Name": "La Odisea ",
+      "SlugName": "la-odisea",
+      "Duration": "170",
+      "Rating": "12-A",
+      "CorporateFilmId": "110237",
+      "Format": [
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "DBOX"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "63555",
+              "IsVisible": false,
+              "Showtime": "18:05:00",
+              "SeatsAvailable": 3,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            },
+            {
+              "SessionId": "63556",
+              "IsVisible": true,
+              "Showtime": "21:50:00",
+              "SeatsAvailable": 8,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        },
+        {
+          "LangTypes": [
+            "DOB"
+          ],
+          "ScreenTypes": [
+            "2D"
+          ],
+          "SeatTypes": [
+            "GENERAL"
+          ],
+          "Sessions": [
+            {
+              "SessionId": "63590",
+              "IsVisible": true,
+              "Showtime": "21:20:00",
+              "SeatsAvailable": 133,
+              "IsMidnightSession": false,
+              "IsAllocatedSeating": true
+            }
+          ]
+        }
+      ],
+      "CoverImageUrl": "https://assets.cinemark-core.com/5db771be04daec00076df3f5/vista/movies/6a109beb9045e5c5ad1d5dbe/common/la-odisea-110237-1781272734239",
+      "isAlertClassificationEnable": false,
+      "alertClassificationMessage": "",
+      "isSaleConditionEnable": false,
+      "saleConditionMessage": "",
+      "Order": 1,
+      "GenreName": "Acción"
+    }
+  ]
+}

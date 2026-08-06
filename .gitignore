@@ -1,0 +1,16 @@
+# Base de datos con datos scrapeados (se regenera con el scraper, no se versiona)
+cines.db
+backend/cines.db
+recuperado.sql
+
+# Python
+__pycache__/
+*.pyc
+
+# Node / React Native / Expo
+node_modules/
+.expo/
+*.log
+
+# Editores
+.vscode/

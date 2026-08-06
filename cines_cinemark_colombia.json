@@ -1,0 +1,513 @@
+[
+  {
+    "Name": "Armenia",
+    "CitySlug": "armenia",
+    "Theaters": [
+      {
+        "ID": "2405",
+        "Name": "Unicentro Armenia",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 14 # 6-02 LOCAL 3-02 C.C UNICENTRO",
+        "Address2": "",
+        "Latitude": "4.5402",
+        "Longitude": "-75.6677",
+        "City": "Armenia",
+        "LoyaltyCode": "11",
+        "CinemaId": "2405",
+        "CinemaSlug": "unicentro-armenia"
+      }
+    ]
+  },
+  {
+    "Name": "Bogota",
+    "CitySlug": "bogota",
+    "Theaters": [
+      {
+        "ID": "791",
+        "Name": "Atlantis",
+        "PhoneNumber": "",
+        "Address1": "CALLE 81 # 13 - 05 LC 501 CENTRO COMERCIAL ATLANTIS PLAZA",
+        "Address2": "",
+        "Latitude": "4.6661",
+        "Longitude": "-74.058",
+        "City": "Bogota",
+        "LoyaltyCode": "5",
+        "CinemaId": "791",
+        "CinemaSlug": "atlantis"
+      },
+      {
+        "ID": "792",
+        "Name": "Floresta",
+        "PhoneNumber": "",
+        "Address1": "AVENIDA CARRERA 68 # 90-88 LOCAL 2-064 CENTRO COMERCIAL CAFAM FLORESTA",
+        "Address2": "",
+        "Latitude": "4.6854",
+        "Longitude": "-74.074",
+        "City": "Bogota",
+        "LoyaltyCode": "1",
+        "CinemaId": "792",
+        "CinemaSlug": "floresta"
+      },
+      {
+        "ID": "2422",
+        "Name": "Gran Plaza Bosa",
+        "PhoneNumber": "",
+        "Address1": "CALLE 65 SUR 78 H 51 LOCAL 313 CENTRO COMERCIAL GRAN PLAZA BOSA",
+        "Address2": "",
+        "Latitude": "4.6043",
+        "Longitude": "-74.1862",
+        "City": "Bogota",
+        "LoyaltyCode": "2",
+        "CinemaId": "2422",
+        "CinemaSlug": "gran-plaza-bosa"
+      },
+      {
+        "ID": "2423",
+        "Name": "Gran Plaza El Ensueño",
+        "PhoneNumber": "",
+        "Address1": "CALLE 59 C SUR 51 - 21 LOCAL 201 CENTRO COMERCIAL GRAN PLAZA ENSUEÑO",
+        "Address2": "",
+        "Latitude": "4.5822",
+        "Longitude": "-74.1567",
+        "City": "Bogota",
+        "LoyaltyCode": "36",
+        "CinemaId": "2423",
+        "CinemaSlug": "gran-plaza-el-ensueno"
+      },
+      {
+        "ID": "2401",
+        "Name": "Gran Plaza Soacha",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 7 # 30 B - 139 LOCAL 3-301 CENTRO COMERCIAL GRAN PLAZA SOACHA",
+        "Address2": "",
+        "Latitude": "3.5874",
+        "Longitude": "-74.2073",
+        "City": "Bogota",
+        "LoyaltyCode": "7",
+        "CinemaId": "2401",
+        "CinemaSlug": "gran-plaza-soacha"
+      },
+      {
+        "ID": "2407",
+        "Name": "Micentro El Porvenir",
+        "PhoneNumber": "",
+        "Address1": "CALLE 54F SUR # 94-18 LC 222 CENTRO COMERCIAL MICENTRO",
+        "Address2": "",
+        "Latitude": "4.6368",
+        "Longitude": "-74.1901",
+        "City": "Bogota",
+        "LoyaltyCode": "13",
+        "CinemaId": "2407",
+        "CinemaSlug": "micentro-el-porvenir"
+      },
+      {
+        "ID": "2421",
+        "Name": "Multiplaza",
+        "PhoneNumber": "",
+        "Address1": "CALLE 19 A # 72-57 LOCAL C111 CENTRO COMERCIAL MULTIPLAZA",
+        "Address2": "",
+        "Latitude": "4.6519",
+        "Longitude": "-74.129",
+        "City": "Bogota",
+        "LoyaltyCode": "25",
+        "CinemaId": "2421",
+        "CinemaSlug": "multiplaza"
+      },
+      {
+        "ID": "2420",
+        "Name": "Parque Colina",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 58D # 146 - 51 LOCAL 331 CENTRO COMERCIAL PARQUE COLINA",
+        "Address2": "",
+        "Latitude": "4.7318",
+        "Longitude": "-74.0686",
+        "City": "Bogota",
+        "LoyaltyCode": "4",
+        "CinemaId": "2420",
+        "CinemaSlug": "parque-colina"
+      },
+      {
+        "ID": "797",
+        "Name": "Plaza Imperial",
+        "PhoneNumber": "",
+        "Address1": "AVENIDA CARRERA 104 #148-07 LOCAL 2 47 1 CENTRO COMERCIAL PLAZA IMPERIAL",
+        "Address2": "",
+        "Latitude": "4.7495",
+        "Longitude": "-74.0974",
+        "City": "Bogota",
+        "LoyaltyCode": "34",
+        "CinemaId": "797",
+        "CinemaSlug": "plaza-imperial"
+      }
+    ]
+  },
+  {
+    "Name": "Bucaramanga",
+    "CitySlug": "bucaramanga",
+    "Theaters": [
+      {
+        "ID": "787",
+        "Name": "Megamall",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 5 N 60 123 L C 218",
+        "Address2": "",
+        "Latitude": "7.1307",
+        "Longitude": "-73.1138",
+        "City": "Bucaramanga",
+        "LoyaltyCode": "29",
+        "CinemaId": "787",
+        "CinemaSlug": "megamall"
+      },
+      {
+        "ID": "2408",
+        "Name": "Parque Caracolí",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 27 # 29 - 145 Local 502 CENTRO COMERCIAL PARQUE CARACOLI",
+        "Address2": "",
+        "Latitude": "7.0716",
+        "Longitude": "-73.1052",
+        "City": "Bucaramanga",
+        "LoyaltyCode": "14",
+        "CinemaId": "2408",
+        "CinemaSlug": "parque-caracoli"
+      }
+    ]
+  },
+  {
+    "Name": "Cali",
+    "CitySlug": "cali",
+    "Theaters": [
+      {
+        "ID": "2425",
+        "Name": "MallPlaza",
+        "PhoneNumber": "",
+        "Address1": "CALLE 5 # 52-140 L 442",
+        "Address2": "",
+        "Latitude": "3.4122",
+        "Longitude": "-76.5486",
+        "City": "Cali",
+        "LoyaltyCode": "39",
+        "CinemaId": "2425",
+        "CinemaSlug": "mallplaza"
+      },
+      {
+        "ID": "2414",
+        "Name": "Pacific Mall",
+        "PhoneNumber": "488 02 36",
+        "Address1": "CALLE 36N # 6A - 65 LOCAL 500",
+        "Address2": "",
+        "Latitude": "3.4745",
+        "Longitude": "-76.5304",
+        "City": "Cali",
+        "LoyaltyCode": "20",
+        "CinemaId": "2414",
+        "CinemaSlug": "pacific-mall"
+      }
+    ]
+  },
+  {
+    "Name": "Cucuta",
+    "CitySlug": "cucuta",
+    "Theaters": [
+      {
+        "ID": "799",
+        "Name": "Ventura Plaza",
+        "PhoneNumber": "",
+        "Address1": "CALLE 10 Y 11 DIAGONAL SANTANDER SECTOR QUINTA VELEZ LOCAL 325",
+        "Address2": "",
+        "Latitude": "7.8875",
+        "Longitude": "-72.4982",
+        "City": "Cucuta",
+        "LoyaltyCode": "35",
+        "CinemaId": "799",
+        "CinemaSlug": "ventura-plaza"
+      }
+    ]
+  },
+  {
+    "Name": "Florencia",
+    "CitySlug": "florencia",
+    "Theaters": [
+      {
+        "ID": "2410",
+        "Name": "Gran Plaza Florencia",
+        "PhoneNumber": "",
+        "Address1": "CARRERA. 3A BIS # 21A-14 (DIAG 22) LOCAL 212 L1",
+        "Address2": "",
+        "Latitude": "1.6246",
+        "Longitude": "-75.6087",
+        "City": "Florencia",
+        "LoyaltyCode": "16",
+        "CinemaId": "2410",
+        "CinemaSlug": "gran-plaza-florencia"
+      }
+    ]
+  },
+  {
+    "Name": "Ibague",
+    "CitySlug": "ibague",
+    "Theaters": [
+      {
+        "ID": "788",
+        "Name": "Multicentro",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 5 N 60 123 L C 218",
+        "Address2": "",
+        "Latitude": "4.4367",
+        "Longitude": "-75.2042",
+        "City": "Ibague",
+        "LoyaltyCode": "30",
+        "CinemaId": "788",
+        "CinemaSlug": "multicentro"
+      }
+    ]
+  },
+  {
+    "Name": "Ipiales",
+    "CitySlug": "ipiales",
+    "Theaters": [
+      {
+        "ID": "2415",
+        "Name": "Gran Plaza Ipiales",
+        "PhoneNumber": "",
+        "Address1": "CALLE 24 # 6 - 120 LOCAL 201",
+        "Address2": "",
+        "Latitude": "0.8302",
+        "Longitude": "-77.6518",
+        "City": "Ipiales",
+        "LoyaltyCode": "21",
+        "CinemaId": "2415",
+        "CinemaSlug": "gran-plaza-ipiales"
+      }
+    ]
+  },
+  {
+    "Name": "Medellin",
+    "CitySlug": "medellin",
+    "Theaters": [
+      {
+        "ID": "2424",
+        "Name": "Arkadia",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 70 N° 1 09 LOCAL 465",
+        "Address2": "",
+        "Latitude": "6.2124",
+        "Longitude": "-75.5944",
+        "City": "Medellin",
+        "LoyaltyCode": "37",
+        "CinemaId": "2424",
+        "CinemaSlug": "arkadia"
+      },
+      {
+        "ID": "790",
+        "Name": "El Tesoro",
+        "PhoneNumber": "",
+        "Address1": "TRANSVERSAL SUPERIOR CARRERA 25A # 1A SUR - 45 LOCAL 1120",
+        "Address2": "",
+        "Latitude": "6.198",
+        "Longitude": "-75.5613",
+        "City": "Medellin",
+        "LoyaltyCode": "32",
+        "CinemaId": "790",
+        "CinemaSlug": "el-tesoro"
+      }
+    ]
+  },
+  {
+    "Name": "Monteria",
+    "CitySlug": "monteria",
+    "Theaters": [
+      {
+        "ID": "2409",
+        "Name": "Buenavista Montería",
+        "PhoneNumber": "",
+        "Address1": " CARRERA 6 N 68- 72 LOCAL 294",
+        "Address2": "",
+        "Latitude": "8.7786",
+        "Longitude": "-75.8625",
+        "City": "Monteria",
+        "LoyaltyCode": "15",
+        "CinemaId": "2409",
+        "CinemaSlug": "buenavista-monteria"
+      }
+    ]
+  },
+  {
+    "Name": "Neiva",
+    "CitySlug": "neiva",
+    "Theaters": [
+      {
+        "ID": "2404",
+        "Name": "San Pedro Plaza",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 8 # 38-42 LOCAL 222",
+        "Address2": "",
+        "Latitude": "2.9495",
+        "Longitude": "-75.2882",
+        "City": "Neiva",
+        "LoyaltyCode": "10",
+        "CinemaId": "2404",
+        "CinemaSlug": "san-pedro-plaza"
+      }
+    ]
+  },
+  {
+    "Name": "Palmira",
+    "CitySlug": "palmira",
+    "Theaters": [
+      {
+        "ID": "2403",
+        "Name": "Llanogrande Palmira",
+        "PhoneNumber": "",
+        "Address1": "CALLE 31 # 44-239 LOCAL 400",
+        "Address2": "",
+        "Latitude": "3.5282",
+        "Longitude": "-76.3175",
+        "City": "Palmira",
+        "LoyaltyCode": "9",
+        "CinemaId": "2403",
+        "CinemaSlug": "llanogrande-palmira"
+      },
+      {
+        "ID": "2412",
+        "Name": "Unicentro Palmira",
+        "PhoneNumber": "",
+        "Address1": "CALLE 42 # 39 - 68 LOCAL 2-32",
+        "Address2": "",
+        "Latitude": "3.5406",
+        "Longitude": "-76.3128",
+        "City": "Palmira",
+        "LoyaltyCode": "18",
+        "CinemaId": "2412",
+        "CinemaSlug": "unicentro-palmira"
+      }
+    ]
+  },
+  {
+    "Name": "Pasto",
+    "CitySlug": "pasto",
+    "Theaters": [
+      {
+        "ID": "2400",
+        "Name": "Unicentro Pasto",
+        "PhoneNumber": "",
+        "Address1": "CALLE 11 # 34 - 78 LOCAL 239",
+        "Address2": "",
+        "Latitude": "1.2171",
+        "Longitude": "-77.291",
+        "City": "Pasto",
+        "LoyaltyCode": "6",
+        "CinemaId": "2400",
+        "CinemaSlug": "unicentro-pasto"
+      }
+    ]
+  },
+  {
+    "Name": "Pereira",
+    "CitySlug": "pereira",
+    "Theaters": [
+      {
+        "ID": "673",
+        "Name": "Parque Arboleda",
+        "PhoneNumber": "",
+        "Address1": "AV. CIRCUNVALAR # 5 - 20 LOCAL 500 CENTRO COMERCIAL PARQUE ARBOLEDA",
+        "Address2": "",
+        "Latitude": "4.808",
+        "Longitude": "-75.686",
+        "City": "Pereira",
+        "LoyaltyCode": "26",
+        "CinemaId": "673",
+        "CinemaSlug": "parque-arboleda"
+      },
+      {
+        "ID": "2402",
+        "Name": "Unicentro Pereira",
+        "PhoneNumber": "",
+        "Address1": "AVENIDA 30 DE AGOSTO # 75 - 51 LOCAL C-16",
+        "Address2": "",
+        "Latitude": "4.8104",
+        "Longitude": "-75.7396",
+        "City": "Pereira",
+        "LoyaltyCode": "8",
+        "CinemaId": "2402",
+        "CinemaSlug": "unicentro-pereira"
+      }
+    ]
+  },
+  {
+    "Name": "Santa Marta",
+    "CitySlug": "santa-marta",
+    "Theaters": [
+      {
+        "ID": "2416",
+        "Name": "Buenavista",
+        "PhoneNumber": "",
+        "Address1": "AVENIDA LIBERTADOR FRENTE A LA QUINTA DE SAN PREDO ALEJANDRINO LOCAL 34",
+        "Address2": "",
+        "Latitude": "11.2262",
+        "Longitude": "-74.1739",
+        "City": "Santa Marta",
+        "LoyaltyCode": "22",
+        "CinemaId": "2416",
+        "CinemaSlug": "buenavista"
+      }
+    ]
+  },
+  {
+    "Name": "Soledad",
+    "CitySlug": "soledad",
+    "Theaters": [
+      {
+        "ID": "2411",
+        "Name": "Gran Plaza del Sol",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 32 # 30-15 LOCAL 2-01",
+        "Address2": "",
+        "Latitude": "10.9263",
+        "Longitude": "-74.7831",
+        "City": "Soledad",
+        "LoyaltyCode": "17",
+        "CinemaId": "2411",
+        "CinemaSlug": "gran-plaza-del-sol"
+      }
+    ]
+  },
+  {
+    "Name": "Villavicencio",
+    "CitySlug": "villavicencio",
+    "Theaters": [
+      {
+        "ID": "2419",
+        "Name": "Primavera Urbana",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 40 CALLE 15 ESQUINA, NIVEL 3 LOCAL 318",
+        "Address2": "",
+        "Latitude": "4.1383",
+        "Longitude": "-73.644",
+        "City": "Villavicencio",
+        "LoyaltyCode": "24",
+        "CinemaId": "2419",
+        "CinemaSlug": "primavera-urbana"
+      }
+    ]
+  },
+  {
+    "Name": "Yopal",
+    "CitySlug": "yopal",
+    "Theaters": [
+      {
+        "ID": "2413",
+        "Name": "Unicentro Yopal",
+        "PhoneNumber": "",
+        "Address1": "CARRERA 29  14 - 47 LOCAL 2-20",
+        "Address2": "",
+        "Latitude": "5.3475",
+        "Longitude": "-72.3927",
+        "City": "Yopal",
+        "LoyaltyCode": "19",
+        "CinemaId": "2413",
+        "CinemaSlug": "unicentro-yopal"
+      }
+    ]
+  }
+]
