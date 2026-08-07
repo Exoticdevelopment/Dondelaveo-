@@ -17,6 +17,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -125,8 +126,10 @@ function TituloSeccion() {
 // ------------------------------------------------------------
 // COMPONENTE: MovieCard — chip naranja para estrenos, chip de vidrio
 // (BlurView) para preventas/próximamente.
+// NUEVO: envuelta en TouchableOpacity, navega a /about al tocarla.
 // ------------------------------------------------------------
 function MovieCard({ pelicula }: { pelicula: Pelicula }) {
+  const router = useRouter();
   const esChipNaranja = pelicula.tipo === "ESTRENO";
 
   let textoChip = pelicula.clasificacion ?? "";
@@ -137,7 +140,13 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
   }
 
   return (
-    <View style={styles.tarjeta}>
+    <TouchableOpacity
+      style={styles.tarjeta}
+      activeOpacity={0.8}
+      onPress={() =>
+        router.push({ pathname: "/about", params: { id: String(pelicula.id) } })
+      }
+    >
       <View style={styles.posterContenedor}>
         {pelicula.cover_image_url ? (
           <Image
@@ -170,7 +179,7 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
           {pelicula.genero ?? ""}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -248,8 +257,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORES.fondo,
     padding: 20,
   },
-
-  // --- Barra superior fija: 108px de alto, igual que en Figma (Fixed) ---
   barraFixedContainer: {
     position: "absolute",
     top: 0,
@@ -266,25 +273,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: COLORES.vidrio,
   },
-  // Logo posicionado igual que en Figma: left 12, top 25, 85x85
   logo: {
     width: 85,
     height: 85,
   },
-
   contenidoHeader: {
-  position: "absolute",
-  top: 44,           // debajo de la barra de estado del celular
-  left: 0,
-  right: 0,
-  height: 64,         // la barra real, donde va tu contenido
-  flexDirection: "row",
-  alignItems: "center",         // esto sí centra verticalmente, dentro de estos 64px
-  justifyContent: "space-between",
-  paddingHorizontal: 16,
-},
-
-  // Fila de controles (Cali / Es / Log in), pegada a la derecha
+    position: "absolute",
+    top: 44,
+    left: 0,
+    right: 0,
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
   controlesFila: {
     height: 40,
     flexDirection: "row",
@@ -327,8 +330,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-
-  // --- Título de sección ---
   tituloFila: {
     flexDirection: "row",
     alignItems: "center",
@@ -347,11 +348,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-  // --- Grid y tarjetas ---
   grid: {
     paddingHorizontal: 16,
-    paddingTop: 124, // 108 (barra fija) + 16 (padding del Content en Figma)
+    paddingTop: 124,
     paddingBottom: 64,
   },
   fila: {
@@ -421,13 +420,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "700",
-     textTransform: "uppercase",
+    textTransform: "uppercase",
   },
   generoTarjeta: {
     color: COLORES.atenuado,
     fontSize: 14,
   },
-
   textoError: {
     color: "#e74c3c",
     fontSize: 16,
