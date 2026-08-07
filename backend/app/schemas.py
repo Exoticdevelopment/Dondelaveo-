@@ -40,6 +40,7 @@ class CarteleraCine(BaseModel):
     fecha: str
     peliculas: List[FuncionesPorPelicula]
 
+
 class ComparacionItem(BaseModel):
     cine: Cine
     pelicula_nombre: str
@@ -48,6 +49,7 @@ class ComparacionItem(BaseModel):
     idioma: Optional[str] = None
     precio_cop: Optional[int] = None
     asientos_disponibles: Optional[int] = None
+
 
 class HomeItem(BaseModel):
     id: int

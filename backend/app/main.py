@@ -22,7 +22,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import get_conn
 from .geo import distancia_km
 from .schemas import (
-    Cine, Pelicula, Funcion, FuncionesPorPelicula, CarteleraCine, ComparacionItem, HomeItem,
+    Cine,
+    Pelicula,
+    Funcion,
+    FuncionesPorPelicula,
+    CarteleraCine,
+    ComparacionItem,
+    HomeItem,
 )
 
 app = FastAPI(
@@ -44,12 +50,15 @@ app.add_middleware(
 def _hoy():
     return date.today().isoformat()
 
+
 def _normalizar_titulo(texto: str) -> str:
     """Limpia un título para poder compararlo: sin tildes, mayúsculas ni puntuación."""
     texto = texto.lower().strip()
     texto = unicodedata.normalize("NFKD", texto)
     texto = "".join(c for c in texto if not unicodedata.combining(c))
-    texto = re.sub(r"[^a-z0-9\s]", " ", texto)  # espacio, no borrar (evita pegar palabras)
+    texto = re.sub(
+        r"[^a-z0-9\s]", " ", texto
+    )  # espacio, no borrar (evita pegar palabras)
     texto = re.sub(r"\s+", " ", texto).strip()
     return texto
 
@@ -73,13 +82,18 @@ def _son_la_misma_pelicula(nombre1: str, nombre2: str, umbral: float = 0.82) -> 
         return True
 
     palabras_a, palabras_b = set(a.split()), set(b.split())
-    menor, mayor = (palabras_a, palabras_b) if len(palabras_a) <= len(palabras_b) else (palabras_b, palabras_a)
+    menor, mayor = (
+        (palabras_a, palabras_b)
+        if len(palabras_a) <= len(palabras_b)
+        else (palabras_b, palabras_a)
+    )
     # Exigimos al menos 2 palabras en el título corto, para no confundir
     # dos películas distintas que por casualidad compartan una sola palabra.
     if len(menor) >= 2 and menor.issubset(mayor):
         return True
 
     return False
+
 
 def _agrupar_peliculas_duplicadas(filas):
     """
@@ -110,8 +124,12 @@ def _row_a_cine(row, lat=None, lon=None):
     if lat is not None and lon is not None:
         d = distancia_km(lat, lon, row["latitud"], row["longitud"])
     return Cine(
-        id=row["id"], nombre=row["nombre"], ciudad=row["ciudad"],
-        latitud=row["latitud"], longitud=row["longitud"], slug=row["slug"],
+        id=row["id"],
+        nombre=row["nombre"],
+        ciudad=row["ciudad"],
+        latitud=row["latitud"],
+        longitud=row["longitud"],
+        slug=row["slug"],
         cadena=row["cadena"] if "cadena" in row.keys() else None,
         distancia_km=d,
     )
@@ -126,7 +144,9 @@ def health():
 def listar_ciudades():
     conn = get_conn()
     try:
-        rows = conn.execute("SELECT DISTINCT ciudad FROM cines ORDER BY ciudad").fetchall()
+        rows = conn.execute(
+            "SELECT DISTINCT ciudad FROM cines ORDER BY ciudad"
+        ).fetchall()
         return [r["ciudad"] for r in rows]
     finally:
         conn.close()
@@ -141,7 +161,9 @@ def listar_cines(ciudad: Optional[str] = None):
                 "SELECT * FROM cines WHERE ciudad = ? ORDER BY nombre", (ciudad,)
             ).fetchall()
         else:
-            rows = conn.execute("SELECT * FROM cines ORDER BY ciudad, nombre").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM cines ORDER BY ciudad, nombre"
+            ).fetchall()
         return [_row_a_cine(r) for r in rows]
     finally:
         conn.close()
@@ -188,7 +210,9 @@ def fechas_disponibles(slug: str):
     """Qué fechas hay datos guardados para esta película (útil para navegar 'próximos días')."""
     conn = get_conn()
     try:
-        pelicula = conn.execute("SELECT id FROM peliculas WHERE slug = ?", (slug,)).fetchone()
+        pelicula = conn.execute(
+            "SELECT id FROM peliculas WHERE slug = ?", (slug,)
+        ).fetchone()
         if not pelicula:
             raise HTTPException(404, f"Película '{slug}' no encontrada")
         rows = conn.execute(
@@ -215,15 +239,20 @@ def comparar_precios(
     """
     conn = get_conn()
     try:
-        pelicula = conn.execute("SELECT id, nombre FROM peliculas WHERE slug = ?", (slug,)).fetchone()
+        pelicula = conn.execute(
+            "SELECT id, nombre FROM peliculas WHERE slug = ?", (slug,)
+        ).fetchone()
         if not pelicula:
             raise HTTPException(404, f"Película '{slug}' no encontrada")
 
         # Buscamos TODAS las películas (de cualquier cadena) cuyo nombre
         # coincida automáticamente con la que se pidió, sin lista manual.
-        todas_las_peliculas = conn.execute("SELECT id, nombre FROM peliculas").fetchall()
+        todas_las_peliculas = conn.execute(
+            "SELECT id, nombre FROM peliculas"
+        ).fetchall()
         ids_coincidentes = [
-            p["id"] for p in todas_las_peliculas
+            p["id"]
+            for p in todas_las_peliculas
             if _son_la_misma_pelicula(pelicula["nombre"], p["nombre"])
         ]
         placeholders = ",".join("?" * len(ids_coincidentes))
@@ -245,11 +274,17 @@ def comparar_precios(
         resultado = []
         for r in rows:
             cine = _row_a_cine(r, lat, lon)
-            resultado.append(ComparacionItem(
-                cine=cine, pelicula_nombre=r["pelicula_nombre"],
-                hora=r["hora"], formato=r["formato"], idioma=r["idioma"],
-                precio_cop=r["precio_cop"], asientos_disponibles=r["asientos_disponibles"],
-            ))
+            resultado.append(
+                ComparacionItem(
+                    cine=cine,
+                    pelicula_nombre=r["pelicula_nombre"],
+                    hora=r["hora"],
+                    formato=r["formato"],
+                    idioma=r["idioma"],
+                    precio_cop=r["precio_cop"],
+                    asientos_disponibles=r["asientos_disponibles"],
+                )
+            )
         return resultado
     finally:
         conn.close()
@@ -260,7 +295,9 @@ def cartelera_de_cine(cine_id: int, fecha: str = Query(default_factory=_hoy)):
     """Cartelera completa (todas las películas y horarios) de un cine en una fecha."""
     conn = get_conn()
     try:
-        cine_row = conn.execute("SELECT * FROM cines WHERE id = ?", (cine_id,)).fetchone()
+        cine_row = conn.execute(
+            "SELECT * FROM cines WHERE id = ?", (cine_id,)
+        ).fetchone()
         if not cine_row:
             raise HTTPException(404, f"Cine {cine_id} no encontrado")
 
@@ -283,20 +320,30 @@ def cartelera_de_cine(cine_id: int, fecha: str = Query(default_factory=_hoy)):
             if pid not in peliculas_map:
                 peliculas_map[pid] = FuncionesPorPelicula(
                     pelicula=Pelicula(
-                        id=r["pelicula_id"], nombre=r["nombre"], slug=r["slug"],
-                        duracion_min=r["duracion_min"], clasificacion=r["clasificacion"],
+                        id=r["pelicula_id"],
+                        nombre=r["nombre"],
+                        slug=r["slug"],
+                        duracion_min=r["duracion_min"],
+                        clasificacion=r["clasificacion"],
                         genero=r["genero"],
                     ),
                     funciones=[],
                 )
-            peliculas_map[pid].funciones.append(Funcion(
-                session_id=r["session_id"], hora=r["hora"], formato=r["formato"],
-                idioma=r["idioma"], asientos_disponibles=r["asientos_disponibles"],
-                precio_cop=r["precio_cop"],
-            ))
+            peliculas_map[pid].funciones.append(
+                Funcion(
+                    session_id=r["session_id"],
+                    hora=r["hora"],
+                    formato=r["formato"],
+                    idioma=r["idioma"],
+                    asientos_disponibles=r["asientos_disponibles"],
+                    precio_cop=r["precio_cop"],
+                )
+            )
 
         return CarteleraCine(
-            cine=_row_a_cine(cine_row), fecha=fecha, peliculas=list(peliculas_map.values()),
+            cine=_row_a_cine(cine_row),
+            fecha=fecha,
+            peliculas=list(peliculas_map.values()),
         )
     finally:
         conn.close()
@@ -316,16 +363,14 @@ def home(fecha: str = Query(default_factory=_hoy)):
     """
     conn = get_conn()
     try:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT p.id, p.nombre, p.slug, p.genero, p.clasificacion, p.duracion_min,
                    p.cover_image_url, MIN(f.fecha) as fecha_min
             FROM peliculas p
             LEFT JOIN funciones f ON f.pelicula_id = p.id
             GROUP BY p.id
             ORDER BY p.nombre
-            """
-        ).fetchall()
+            """).fetchall()
 
         clusters = _agrupar_peliculas_duplicadas(rows)
 
@@ -333,7 +378,9 @@ def home(fecha: str = Query(default_factory=_hoy)):
         for cluster in clusters:
             # Representante: preferimos la fila que sí tenga póster,
             # para no perder la imagen si una de las cadenas no la trae.
-            representante = next((f for f in cluster if f["cover_image_url"]), cluster[0])
+            representante = next(
+                (f for f in cluster if f["cover_image_url"]), cluster[0]
+            )
 
             # La fecha de estreno real es la más temprana entre TODAS las
             # cadenas que tengan esta película (si Izi Movie la estrena
@@ -348,12 +395,19 @@ def home(fecha: str = Query(default_factory=_hoy)):
             else:
                 tipo, fecha_estreno = "PREVENTA", fecha_min_global
 
-            resultado.append(HomeItem(
-                id=representante["id"], nombre=representante["nombre"], slug=representante["slug"],
-                genero=representante["genero"], clasificacion=representante["clasificacion"],
-                duracion_min=representante["duracion_min"], cover_image_url=representante["cover_image_url"],
-                tipo=tipo, fecha_estreno=fecha_estreno,
-            ))
+            resultado.append(
+                HomeItem(
+                    id=representante["id"],
+                    nombre=representante["nombre"],
+                    slug=representante["slug"],
+                    genero=representante["genero"],
+                    clasificacion=representante["clasificacion"],
+                    duracion_min=representante["duracion_min"],
+                    cover_image_url=representante["cover_image_url"],
+                    tipo=tipo,
+                    fecha_estreno=fecha_estreno,
+                )
+            )
 
         resultado.sort(key=lambda item: item.nombre)
         return resultado

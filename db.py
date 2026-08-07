@@ -65,8 +65,10 @@ def crear_tablas():
     conn.commit()
     conn.close()
 
+
 def upsert_cine(conn, id, nombre, ciudad, latitud, longitud, company_id, slug, cadena):
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO cines (id, nombre, ciudad, latitud, longitud, company_id, slug, cadena)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
@@ -74,39 +76,70 @@ def upsert_cine(conn, id, nombre, ciudad, latitud, longitud, company_id, slug, c
             latitud=excluded.latitud, longitud=excluded.longitud,
             company_id=excluded.company_id, slug=excluded.slug,
             cadena=excluded.cadena
-    """, (id, nombre, ciudad, latitud, longitud, company_id, slug, cadena))
+    """,
+        (id, nombre, ciudad, latitud, longitud, company_id, slug, cadena),
+    )
 
 
-def upsert_pelicula(conn, nombre, slug, duracion_min, clasificacion, genero, cover_image_url=None):
-    conn.execute("""
+def upsert_pelicula(
+    conn, nombre, slug, duracion_min, clasificacion, genero, cover_image_url=None
+):
+    conn.execute(
+        """
         INSERT INTO peliculas (nombre, slug, duracion_min, clasificacion, genero, cover_image_url)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(slug) DO UPDATE SET
             nombre=excluded.nombre, duracion_min=excluded.duracion_min,
             clasificacion=excluded.clasificacion, genero=excluded.genero,
             cover_image_url=COALESCE(excluded.cover_image_url, cover_image_url)
-    """, (nombre, slug, duracion_min, clasificacion, genero, cover_image_url))
-    row = conn.execute(
-        "SELECT id FROM peliculas WHERE slug = ?", (slug,)).fetchone()
+    """,
+        (nombre, slug, duracion_min, clasificacion, genero, cover_image_url),
+    )
+    row = conn.execute("SELECT id FROM peliculas WHERE slug = ?", (slug,)).fetchone()
     return row["id"]
 
 
-def upsert_funcion(conn, session_id, cine_id, pelicula_id, fecha, hora, formato, idioma, asientos_disponibles):
-    conn.execute("""
+def upsert_funcion(
+    conn,
+    session_id,
+    cine_id,
+    pelicula_id,
+    fecha,
+    hora,
+    formato,
+    idioma,
+    asientos_disponibles,
+):
+    conn.execute(
+        """
         INSERT INTO funciones (session_id, cine_id, pelicula_id, fecha, hora, formato, idioma, asientos_disponibles)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(session_id) DO UPDATE SET
             asientos_disponibles=excluded.asientos_disponibles
-    """, (session_id, cine_id, pelicula_id, fecha, hora, formato, idioma, asientos_disponibles))
+    """,
+        (
+            session_id,
+            cine_id,
+            pelicula_id,
+            fecha,
+            hora,
+            formato,
+            idioma,
+            asientos_disponibles,
+        ),
+    )
 
 
 def upsert_precio(conn, session_id, precio_cop):
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO precios (session_id, precio_cop, actualizado_en)
         VALUES (?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(session_id) DO UPDATE SET
             precio_cop=excluded.precio_cop, actualizado_en=CURRENT_TIMESTAMP
-    """, (session_id, precio_cop))
+    """,
+        (session_id, precio_cop),
+    )
 
 
 if __name__ == "__main__":

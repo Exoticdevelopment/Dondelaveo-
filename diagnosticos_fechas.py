@@ -63,7 +63,9 @@ def main(cine_slug, dias):
         time.sleep(0.3)
 
     print()
-    print(f"=== TOTAL: {len(todas_las_peliculas)} peliculas distintas en {dias} dias ===")
+    print(
+        f"=== TOTAL: {len(todas_las_peliculas)} peliculas distintas en {dias} dias ==="
+    )
     for slug, nombre in todas_las_peliculas.items():
         print(f"  - {nombre} ({slug})")
 
@@ -77,7 +79,11 @@ def main(cine_slug, dias):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cine", default="mallplaza", help="Slug del cine, ej: mallplaza, pacific-mall")
-    parser.add_argument("--dias", type=int, default=10, help="Cuantos dias hacia adelante consultar")
+    parser.add_argument(
+        "--cine", default="mallplaza", help="Slug del cine, ej: mallplaza, pacific-mall"
+    )
+    parser.add_argument(
+        "--dias", type=int, default=10, help="Cuantos dias hacia adelante consultar"
+    )
     args = parser.parse_args()
     main(args.cine, args.dias)

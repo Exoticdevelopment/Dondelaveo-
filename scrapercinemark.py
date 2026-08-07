@@ -18,7 +18,44 @@ from datetime import date, timedelta
 
 import requests
 
-from db import get_conn, crear_tablas, upsert_cine, upsert_pelicula, upsert_funcion, upsert_precio
+from db import (
+    get_conn,
+    crear_tablas,
+    upsert_cine,
+    upsert_pelicula,
+    upsert_funcion,
+    upsert_precio,
+)
+
+
+def con_reintentos(funcion, intentos=3, espera_inicial=2):
+    """
+    Recibe una función que hace una petición de red (por ejemplo,
+    'obtener_precio_general') y devuelve una VERSIÓN NUEVA de esa misma
+    función que, si falla, la vuelve a intentar sola antes de rendirse.
+
+    Parámetros:
+        funcion:         la función original que queremos hacer más resistente.
+        intentos:        cuántas veces lo intenta en total antes de rendirse (por defecto 3).
+        espera_inicial:  cuántos segundos espera después del primer fallo (por defecto 2).
+                         Cada intento siguiente espera más tiempo que el anterior
+                         (2s, luego 4s, luego 6s...), para no bombardear al servidor
+                         si está teniendo un problema temporal.
+    """
+
+    def envoltorio(*args, **kwargs):
+        for intento in range(1, intentos + 1):
+            try:
+                return funcion(*args, **kwargs)
+            except Exception as e:
+                if intento == intentos:
+                    raise
+                espera = espera_inicial * intento
+                log(f"    [REINTENTO {intento}/{intentos}] fallo, esperando {espera}s: {e}")
+                time.sleep(espera)
+
+    return envoltorio
+
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -30,6 +67,7 @@ HEADERS = {
 
 PAUSA_ENTRE_PETICIONES = 0.2  # segundos, dentro de un mismo cine
 CINES_EN_PARALELO = 6  # cuántos cines se procesan al mismo tiempo
+DIAS_A_CONSULTAR = 7  # hoy + 6 días más, para detectar preventas
 print_lock = threading.Lock()
 
 
@@ -76,7 +114,8 @@ def obtener_precio_general(cinema_id, session_id, company_id):
     data = response.json()
 
     candidatos = [
-        t for t in data.get("Tickets", [])
+        t
+        for t in data.get("Tickets", [])
         if not t["IsAvailableForLoyaltyMembersOnly"]
         and not t["IsPackageTicket"]
         and not t["BinDetails"]
@@ -93,8 +132,12 @@ def slugify(nombre):
     return (
         nombre.lower()
         .replace(" ", "-")
-        .replace("é", "e").replace("í", "i").replace("ó", "o")
-        .replace("á", "a").replace("ú", "u").replace("ñ", "n")
+        .replace("é", "e")
+        .replace("í", "i")
+        .replace("ó", "o")
+        .replace("á", "a")
+        .replace("ú", "u")
+        .replace("ñ", "n")
     )
 
 
@@ -105,15 +148,21 @@ def procesar_cine(cine, ciudad_nombre, fecha):
     slug = cine.get("CinemaSlug") or slugify(cine["Name"])
 
     upsert_cine(
-        conn, id=cine_id, nombre=cine["Name"], ciudad=ciudad_nombre,
+        conn,
+        id=cine_id,
+        nombre=cine["Name"],
+        ciudad=ciudad_nombre,
         latitud=float(cine["Latitude"]) if cine["Latitude"] else None,
         longitud=float(cine["Longitude"]) if cine["Longitude"] else None,
-        company_id=company_id, slug=slug, cadena="Cinemark",
+        company_id=company_id,
+        slug=slug,
+        cadena="Cinemark",
     )
     conn.commit()
 
     try:
-        cartelera = obtener_cartelera(slug, company_id, fecha)
+        # NUEVO: con reintentos automáticos ante fallos pasajeros de red.
+        cartelera = con_reintentos(obtener_cartelera)(slug, company_id, fecha)
     except requests.RequestException as e:
         log(f"    [ERROR] No se pudo obtener cartelera de {cine['Name']}: {e}")
         conn.close()
@@ -122,10 +171,12 @@ def procesar_cine(cine, ciudad_nombre, fecha):
 
     for pelicula in cartelera.get("Movies", []):
         pelicula_id = upsert_pelicula(
-            conn, nombre=pelicula["Name"].strip(), slug=pelicula["SlugName"],
-            duracion_min=int(pelicula["Duration"]
-                             ) if pelicula["Duration"] else None,
-            clasificacion=pelicula.get("Rating"), genero=pelicula.get("GenreName"),
+            conn,
+            nombre=pelicula["Name"].strip(),
+            slug=pelicula["SlugName"],
+            duracion_min=int(pelicula["Duration"]) if pelicula["Duration"] else None,
+            clasificacion=pelicula.get("Rating"),
+            genero=pelicula.get("GenreName"),
             cover_image_url=pelicula.get("CoverImageUrl"),
         )
 
@@ -141,35 +192,43 @@ def procesar_cine(cine, ciudad_nombre, fecha):
 
                 session_id = int(sesion["SessionId"])
                 upsert_funcion(
-                    conn, session_id=session_id, cine_id=cine_id, pelicula_id=pelicula_id,
-                    fecha=fecha, hora=sesion["Showtime"], formato=tipo_pantalla,
-                    idioma=idioma, asientos_disponibles=sesion.get(
-                        "SeatsAvailable"),
+                    conn,
+                    session_id=session_id,
+                    cine_id=cine_id,
+                    pelicula_id=pelicula_id,
+                    fecha=fecha,
+                    hora=sesion["Showtime"],
+                    formato=tipo_pantalla,
+                    idioma=idioma,
+                    asientos_disponibles=sesion.get("SeatsAvailable"),
                 )
                 conn.commit()
 
                 try:
-                    precio = obtener_precio_general(
-                        cine_id, session_id, company_id)
+                    # NUEVO: mismo tratamiento de reintentos para el precio.
+                    precio = con_reintentos(obtener_precio_general)(
+                        cine_id, session_id, company_id
+                    )
                     if precio:
                         upsert_precio(conn, session_id, precio)
                         conn.commit()
                 except requests.RequestException as e:
                     log(
-                        f"    [ERROR] No se pudo obtener precio de sesión {session_id}: {e}")
+                        f"    [ERROR] No se pudo obtener precio de sesión {session_id}: {e}"
+                    )
                 time.sleep(PAUSA_ENTRE_PETICIONES)
 
-    log(f"    OK: {cine['Name']} ({ciudad_nombre}) — {len(cartelera.get('Movies', []))} películas procesadas")
+    log(
+        f"    OK: {cine['Name']} ({ciudad_nombre}) — {len(cartelera.get('Movies', []))} películas procesadas"
+    )
     conn.close()
-
-
-DIAS_A_CONSULTAR = 7  # hoy + 6 días más, para detectar preventas
 
 
 def main(ciudad_filtro=None):
     crear_tablas()
-    fechas = [(date.today() + timedelta(days=i)).isoformat()
-              for i in range(DIAS_A_CONSULTAR)]
+    fechas = [
+        (date.today() + timedelta(days=i)).isoformat() for i in range(DIAS_A_CONSULTAR)
+    ]
 
     print("Descargando lista de ciudades y cines...")
     ciudades = obtener_cines()
@@ -183,12 +242,15 @@ def main(ciudad_filtro=None):
                 tareas.append((cine, ciudad["Name"], fecha))
 
     print(
-        f"Procesando {len(tareas)} combinaciones cine+fecha con {CINES_EN_PARALELO} en paralelo...\n")
+        f"Procesando {len(tareas)} combinaciones cine+fecha con {CINES_EN_PARALELO} en paralelo...\n"
+    )
     print(f"({len(fechas)} días: {fechas[0]} a {fechas[-1]})\n")
 
     with ThreadPoolExecutor(max_workers=CINES_EN_PARALELO) as executor:
-        futuros = [executor.submit(procesar_cine, cine, ciudad_nombre, fecha)
-                   for cine, ciudad_nombre, fecha in tareas]
+        futuros = [
+            executor.submit(procesar_cine, cine, ciudad_nombre, fecha)
+            for cine, ciudad_nombre, fecha in tareas
+        ]
         for futuro in as_completed(futuros):
             futuro.result()  # relanza cualquier excepción no capturada, para verla
 
@@ -198,6 +260,8 @@ def main(ciudad_filtro=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ciudad", help="Slug de ciudad, ej: cali (opcional, si no se pasa recorre todas)")
+        "--ciudad",
+        help="Slug de ciudad, ej: cali (opcional, si no se pasa recorre todas)",
+    )
     args = parser.parse_args()
     main(ciudad_filtro=args.ciudad)
