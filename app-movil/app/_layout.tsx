@@ -6,12 +6,17 @@ import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import SplashScreen from './splash';
+import { CarteleraProvider, useCartelera } from '../contexts/cartelera-context';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-// Cuánto tiempo se muestra el Splash de Figma antes de pasar al Home.
+// Tiempo MÍNIMO que se muestra el Splash de Figma, para que no sea un
+// parpadeo si el backend responde muy rápido. Si la cartelera tarda más
+// que esto en cargar, el splash se queda hasta que esté lista (ver
+// `mostrarSplash` abajo): así Home nunca llega a pintar su estado de
+// "Cargando cartelera...".
 const DURACION_SPLASH_MS = 2000;
 
 // Toda la app usa el diseño oscuro de Figma (fondo #0F1420), sin importar
@@ -29,13 +34,18 @@ const TEMA_APP = {
   },
 };
 
-export default function RootLayout() {
-  const [mostrarSplash, setMostrarSplash] = useState(true);
+function RootLayoutInterno() {
+  const [tiempoMinimoListo, setTiempoMinimoListo] = useState(false);
+  const { cargando: cargandoCartelera } = useCartelera();
 
   useEffect(() => {
-    const temporizador = setTimeout(() => setMostrarSplash(false), DURACION_SPLASH_MS);
+    const temporizador = setTimeout(() => setTiempoMinimoListo(true), DURACION_SPLASH_MS);
     return () => clearTimeout(temporizador);
   }, []);
+
+  // El splash se queda mientras: no pasó el tiempo mínimo, O la
+  // cartelera (lista + detalle de cada película) todavía está cargando.
+  const mostrarSplash = !tiempoMinimoListo || cargandoCartelera;
 
   return (
     // View raíz con fondo oscuro: react-native-screens anima cada pantalla
@@ -60,5 +70,16 @@ export default function RootLayout() {
         <StatusBar style="light" />
       </ThemeProvider>
     </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    // El provider vive FUERA del gate del splash, para que el fetch de la
+    // cartelera arranque de inmediato al abrir la app, en paralelo con el
+    // timer mínimo del splash, y no después de que este termine.
+    <CarteleraProvider>
+      <RootLayoutInterno />
+    </CarteleraProvider>
   );
 }

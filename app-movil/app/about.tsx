@@ -14,31 +14,14 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
+import { useCartelera, type PeliculaDetalle as Pelicula } from "../contexts/cartelera-context";
 
 // ------------------------------------------------------------
-// CONFIGURACIÓN: misma dirección de backend que index.tsx.
-// TODO (futuro, no urgente): mover a un solo archivo compartido
-// (ej. constants/api.ts) para no tener que actualizar la IP en dos sitios.
+// TIPOS
 // ------------------------------------------------------------
-const API_URL = "http://192.168.1.13:8000";
-
-// ------------------------------------------------------------
-// TIPO: coincide con el modelo `Pelicula` que devuelve el backend
-// (backend/app/schemas.py) en GET /peliculas/{slug}.
-// ------------------------------------------------------------
-type Pelicula = {
-  id: number;
-  nombre: string;
-  slug: string;
-  duracion_min: number | null;
-  clasificacion: string | null;
-  genero: string | null;
-  cover_image_url: string | null;
-  sinopsis: string | null;
-  director: string | null;
-  actores: string | null;
-  trailer_url: string | null;
-};
+// (El tipo Pelicula ahora es PeliculaDetalle, definido en el contexto de
+// cartelera — ahí también vive el fetch a /peliculas/{slug}. Antes esto
+// estaba duplicado acá con su propia constante API_URL.)
 
 type Tab = "sipnosis" | "funciones";
 
@@ -73,8 +56,15 @@ export default function PeliculaDetalle() {
   // el WebView y caemos al póster + botón "Ver en YouTube".
   const [embedError, setEmbedError] = useState(false);
 
-  const [pelicula, setPelicula] = useState<Pelicula | null>(null);
-  const [cargando, setCargando] = useState(true);
+  const { detalles: carteleraDetalles, obtenerDetalle } = useCartelera();
+
+  // Caso normal: la precarga del splash (ver contexts/cartelera-context.tsx)
+  // ya dejó esta película en cache, así que arrancamos con cargando=false
+  // y sin parpadeo. Fallback (caso raro, ej. película nueva en el backend
+  // que no estaba en /home cuando arrancó la app): si no está en cache,
+  // se dispara el fetch puntual acá abajo y sí se ve el spinner.
+  const pelicula = slug ? carteleraDetalles[slug] ?? null : null;
+  const [cargando, setCargando] = useState(!pelicula);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,20 +74,18 @@ export default function PeliculaDetalle() {
       return;
     }
 
+    if (carteleraDetalles[slug]) {
+      setCargando(false);
+      return;
+    }
+
     setCargando(true);
     setError(null);
 
-    fetch(`${API_URL}/peliculas/${slug}`)
-      .then((respuesta) => {
-        if (!respuesta.ok) {
-          throw new Error(`El backend respondió con error ${respuesta.status}`);
-        }
-        return respuesta.json();
-      })
-      .then((datos) => setPelicula(datos))
+    obtenerDetalle(slug)
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false));
-  }, [slug]);
+  }, [slug, carteleraDetalles, obtenerDetalle]);
 
   // ------------------------------------------------------------
   // Estado: cargando

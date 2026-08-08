@@ -22,7 +22,7 @@ export default function SplashScreen() {
         resizeMode="cover"
       />
 
-      <BlurView intensity={40} tint="dark" style={styles.overlay} />
+      <BlurView intensity={90} tint="dark" style={styles.overlay} />
 
       <View style={styles.centrado}>
         <Image
