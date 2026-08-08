@@ -144,7 +144,7 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
       style={styles.tarjeta}
       activeOpacity={0.8}
       onPress={() =>
-        router.push({ pathname: "/about", params: { id: String(pelicula.id) } })
+        router.push({ pathname: "/about", params: { slug: pelicula.slug } })
       }
     >
       <View style={styles.posterContenedor}>
