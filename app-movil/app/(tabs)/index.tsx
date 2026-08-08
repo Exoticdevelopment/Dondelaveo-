@@ -14,7 +14,6 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -204,30 +203,32 @@ export default function PantallaInicio() {
       .finally(() => setCargando(false));
   }, []);
 
+  // ----------------------------------------------------------
+  // Sin early returns: el header (CinemaHeader) siempre se monta.
+  // Solo el contenido debajo de él cambia según el estado.
+  // ----------------------------------------------------------
+  let contenido: JSX.Element;
+
   if (cargando) {
-    return (
-      <SafeAreaView style={styles.centrado}>
+    contenido = (
+      <View style={styles.centrado}>
         <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.textoAyuda}>Cargando cartelera...</Text>
-      </SafeAreaView>
+      </View>
     );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.centrado}>
+  } else if (error) {
+    contenido = (
+      <View style={styles.centrado}>
         <Text style={styles.textoError}>No se pudo conectar al backend</Text>
         <Text style={styles.textoAyuda}>{error}</Text>
         <Text style={styles.textoAyuda}>
           Revisa que el backend esté corriendo con --host 0.0.0.0{"\n"}
           y que la IP en API_URL sea correcta.
         </Text>
-      </SafeAreaView>
+      </View>
     );
-  }
-
-  return (
-    <View style={styles.contenedor}>
+  } else if (peliculas.length > 0) {
+    contenido = (
       <FlatList
         data={peliculas}
         keyExtractor={(pelicula) => pelicula.slug}
@@ -237,6 +238,18 @@ export default function PantallaInicio() {
         ListHeaderComponent={<TituloSeccion />}
         renderItem={({ item }) => <MovieCard pelicula={item} />}
       />
+    );
+  } else {
+    contenido = (
+      <View style={styles.centrado}>
+        <Text style={styles.textoAyuda}>No hay películas disponibles.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.contenedor}>
+      {contenido}
       <CinemaHeader />
     </View>
   );
@@ -247,15 +260,19 @@ export default function PantallaInicio() {
 // ------------------------------------------------------------
 const styles = StyleSheet.create({
   contenedor: {
+    // Color oscuro forzado para evitar parpadeos blancos entre estados
+    // (cargando / error / con datos / sin datos).
     flex: 1,
-    backgroundColor: COLORES.fondo,
+    backgroundColor: "#0F1420",
   },
   centrado: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: COLORES.fondo,
-    padding: 20,
+    // Sin backgroundColor propio: hereda el fondo oscuro de "contenedor"
+    // para que no haya parpadeo al cambiar de estado.
+    paddingTop: 108, // deja libre el alto del CinemaHeader (absoluto)
+    paddingHorizontal: 20,
   },
   barraFixedContainer: {
     position: "absolute",
