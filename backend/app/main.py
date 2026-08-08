@@ -63,20 +63,30 @@ def _normalizar_titulo(texto: str) -> str:
     return texto
 
 
-def _son_la_misma_pelicula(nombre1: str, nombre2: str, umbral: float = 0.82) -> bool:
+def _son_la_misma_pelicula(fila1, fila2, umbral: float = 0.82) -> bool:
     """
-    Compara dos títulos de película (posiblemente de cadenas distintas,
-    con nombres escritos de forma distinta) y decide si son la misma
-    película, sin necesitar una lista manual de equivalencias.
+    Compara dos FILAS de la tabla 'peliculas' (posiblemente de cadenas
+    distintas, con nombres escritos de forma distinta, o incluso en
+    idiomas distintos) y decide si son la misma película.
 
-    Usa dos reglas:
-    1) Similitud letra por letra (para variaciones tipo tildes/orden,
-       ej. "Spiderman Nuevo Dia" vs "Spiderman: Un Nuevo Día").
-    2) Si un título es una versión recortada del otro (ej. "Bajo Presión"
-       vs "El Día D: Bajo Presión"), revisamos si TODAS las palabras del
-       título más corto aparecen dentro del más largo.
+    Usa dos señales, en este orden:
+    1) tmdb_id: cuando enriquecemos con TMDB, cada película real recibe
+       un identificador único (tmdb_id) sin importar cómo la haya
+       nombrado cada cadena. Si dos filas tienen el MISMO tmdb_id, son
+       la misma película con certeza, sin importar qué tan distintos
+       sean los nombres (ej. "Bajo Presión" vs "Pressure").
+    2) Si no hay tmdb_id en alguna de las dos (o no coincide), caemos
+       al criterio de texto que ya usábamos:
+       a) Similitud letra por letra (variaciones tipo tildes/orden).
+       b) Si un título es una versión recortada del otro, revisamos si
+          TODAS las palabras del título más corto aparecen en el más largo.
     """
-    a, b = _normalizar_titulo(nombre1), _normalizar_titulo(nombre2)
+    tmdb_1 = fila1["tmdb_id"] if "tmdb_id" in fila1.keys() else None
+    tmdb_2 = fila2["tmdb_id"] if "tmdb_id" in fila2.keys() else None
+    if tmdb_1 is not None and tmdb_2 is not None and tmdb_1 == tmdb_2:
+        return True
+
+    a, b = _normalizar_titulo(fila1["nombre"]), _normalizar_titulo(fila2["nombre"])
 
     if difflib.SequenceMatcher(None, a, b).ratio() >= umbral:
         return True
@@ -100,23 +110,36 @@ def _agrupar_peliculas_duplicadas(filas):
     Recibe filas de la tabla 'peliculas' (posiblemente con la MISMA película
     repetida por venir de cadenas distintas, ej. "Spiderman" en Cinemark
     Y en Izi Movie) y las agrupa en "clusters" de películas equivalentes,
-    usando la misma comparación automática de títulos que usa /comparar.
+    usando la misma comparación automática que usa /comparar (tmdb_id primero,
+    texto como respaldo).
+
+    IMPORTANTE: comparamos la nueva fila contra TODOS los miembros de cada
+    cluster existente (no solo el primero), porque a veces A se parece a B
+    por texto, y B comparte tmdb_id con C, pero A y C no se parecen entre
+    sí directamente (ej. "Bajo Presión" ~ "El Día D: Bajo Presión" por texto,
+    y esta última comparte tmdb_id con "Pressure"). Sin esto, C se quedaría
+    afuera del cluster de A y B.
 
     Devuelve una lista de clusters; cada cluster es una lista de filas
     que representan la MISMA película en distintas cadenas.
     """
     clusters = []
     for fila in filas:
-        encontro_cluster = False
+        cluster_encontrado = None
         for cluster in clusters:
-            representante = cluster[0]
-            if _son_la_misma_pelicula(representante["nombre"], fila["nombre"]):
-                cluster.append(fila)
-                encontro_cluster = True
+            if any(_son_la_misma_pelicula(miembro, fila) for miembro in cluster):
+                cluster_encontrado = cluster
                 break
-        if not encontro_cluster:
+        if cluster_encontrado is not None:
+            cluster_encontrado.append(fila)
+        else:
             clusters.append([fila])
     return clusters
+
+
+def _mismo_mes(fecha_iso: str, fecha_referencia: str) -> bool:
+    """True si dos fechas 'YYYY-MM-DD' caen en el mismo año y mes."""
+    return fecha_iso[:7] == fecha_referencia[:7]
 
 
 def _row_a_cine(row, lat=None, lon=None):
@@ -203,6 +226,22 @@ def listar_peliculas(fecha: str = Query(default_factory=_hoy)):
         return [Pelicula(**dict(r)) for r in rows]
     finally:
         conn.close()
+        
+        
+        
+@app.get("/peliculas/{slug}", response_model=Pelicula)
+def detalle_pelicula(slug: str):
+    """Detalle completo de una película (incluye sinopsis/director/actores/trailer de TMDB), para la pantalla de detalle de la app."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM peliculas WHERE slug = ?", (slug,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, f"Película '{slug}' no encontrada")
+        return Pelicula(**dict(row))
+    finally:
+        conn.close()
 
 
 @app.get("/peliculas/{slug}/fechas", response_model=list[str])
@@ -240,21 +279,23 @@ def comparar_precios(
     conn = get_conn()
     try:
         pelicula = conn.execute(
-            "SELECT id, nombre FROM peliculas WHERE slug = ?", (slug,)
+            "SELECT id, nombre, tmdb_id FROM peliculas WHERE slug = ?", (slug,)
         ).fetchone()
         if not pelicula:
             raise HTTPException(404, f"Película '{slug}' no encontrada")
 
-        # Buscamos TODAS las películas (de cualquier cadena) cuyo nombre
-        # coincida automáticamente con la que se pidió, sin lista manual.
+        # Agrupamos TODAS las películas (de cualquier cadena) en clusters de
+        # "misma película" (mismo criterio que usa /home: tmdb_id primero,
+        # texto como respaldo) y nos quedamos con el cluster de la que se pidió.
         todas_las_peliculas = conn.execute(
-            "SELECT id, nombre FROM peliculas"
+            "SELECT id, nombre, tmdb_id FROM peliculas"
         ).fetchall()
-        ids_coincidentes = [
-            p["id"]
-            for p in todas_las_peliculas
-            if _son_la_misma_pelicula(pelicula["nombre"], p["nombre"])
-        ]
+        clusters = _agrupar_peliculas_duplicadas(todas_las_peliculas)
+        cluster_de_la_pelicula = next(
+            (c for c in clusters if any(f["id"] == pelicula["id"] for f in c)),
+            [pelicula],
+        )
+        ids_coincidentes = [f["id"] for f in cluster_de_la_pelicula]
         placeholders = ",".join("?" * len(ids_coincidentes))
 
         rows = conn.execute(
@@ -304,6 +345,7 @@ def cartelera_de_cine(cine_id: int, fecha: str = Query(default_factory=_hoy)):
         rows = conn.execute(
             """
             SELECT p.id as pelicula_id, p.nombre, p.slug, p.duracion_min, p.clasificacion, p.genero,
+                   p.cover_image_url,
                    f.session_id, f.hora, f.formato, f.idioma, f.asientos_disponibles, pr.precio_cop
             FROM funciones f
             JOIN peliculas p ON p.id = f.pelicula_id
@@ -326,6 +368,7 @@ def cartelera_de_cine(cine_id: int, fecha: str = Query(default_factory=_hoy)):
                         duracion_min=r["duracion_min"],
                         clasificacion=r["clasificacion"],
                         genero=r["genero"],
+                        cover_image_url=r["cover_image_url"],
                     ),
                     funciones=[],
                 )
@@ -353,8 +396,15 @@ def cartelera_de_cine(cine_id: int, fecha: str = Query(default_factory=_hoy)):
 def home(fecha: str = Query(default_factory=_hoy)):
     """
     Lista de películas para la pantalla principal de la app, con su tipo
-    (ESTRENO / PREVENTA / PROXIMAMENTE) calculado a partir de la fecha
-    más temprana en la que cada película tiene función guardada.
+    (ESTRENO / PREVENTA) calculado a partir de la fecha más temprana en
+    la que cada película tiene función guardada.
+
+    Solo se muestran películas que tengan AL MENOS una función guardada
+    en alguna cadena (ESTRENO), o cuya función más próxima caiga dentro
+    del mes actual (PREVENTA). Las películas sin ninguna función registrada
+    (catálogo sin fecha real: obras de teatro, conciertos, anuncios sin
+    horarios aún) no se muestran, y las preventas de meses más adelante
+    tampoco, hasta que se acerque su mes.
 
     IMPORTANTE: una misma película puede existir varias veces en la base
     (una vez por cada cadena que la tenga, ej. Cinemark e Izi Movie).
@@ -365,7 +415,7 @@ def home(fecha: str = Query(default_factory=_hoy)):
     try:
         rows = conn.execute("""
             SELECT p.id, p.nombre, p.slug, p.genero, p.clasificacion, p.duracion_min,
-                   p.cover_image_url, MIN(f.fecha) as fecha_min
+                   p.cover_image_url, p.tmdb_id, MIN(f.fecha) as fecha_min
             FROM peliculas p
             LEFT JOIN funciones f ON f.pelicula_id = p.id
             GROUP BY p.id
@@ -386,14 +436,22 @@ def home(fecha: str = Query(default_factory=_hoy)):
             # cadenas que tengan esta película (si Izi Movie la estrena
             # antes que Cinemark, esa es la fecha que debe mostrarse).
             fechas_min = [f["fecha_min"] for f in cluster if f["fecha_min"] is not None]
-            fecha_min_global = min(fechas_min) if fechas_min else None
 
-            if fecha_min_global is None:
-                tipo, fecha_estreno = "PROXIMAMENTE", None
-            elif fecha_min_global <= fecha:
+            if not fechas_min:
+                # Ninguna función registrada en ninguna cadena: no la mostramos
+                # (evita listar catálogo sin fecha real, ej. obras de teatro,
+                # conciertos o anuncios sin horarios todavía).
+                continue
+
+            fecha_min_global = min(fechas_min)
+
+            if fecha_min_global <= fecha:
                 tipo, fecha_estreno = "ESTRENO", None
-            else:
+            elif _mismo_mes(fecha_min_global, fecha):
                 tipo, fecha_estreno = "PREVENTA", fecha_min_global
+            else:
+                # Preventa de un mes más adelante: todavía no se muestra.
+                continue
 
             resultado.append(
                 HomeItem(

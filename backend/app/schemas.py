@@ -19,7 +19,11 @@ class Pelicula(BaseModel):
     duracion_min: Optional[int] = None
     clasificacion: Optional[str] = None
     genero: Optional[str] = None
-
+    cover_image_url: Optional[str] = None
+    sinopsis: Optional[str] = None
+    director: Optional[str] = None
+    actores: Optional[str] = None
+    trailer_url: Optional[str] = None
 
 class Funcion(BaseModel):
     session_id: int

@@ -42,7 +42,12 @@ def crear_tablas():
         duracion_min INTEGER,
         clasificacion TEXT,
         genero TEXT,
-        cover_image_url TEXT
+        cover_image_url TEXT,
+        sinopsis TEXT,
+        director TEXT,
+        actores TEXT,
+        trailer_url TEXT,
+        tmdb_id INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS funciones (
@@ -82,18 +87,53 @@ def upsert_cine(conn, id, nombre, ciudad, latitud, longitud, company_id, slug, c
 
 
 def upsert_pelicula(
-    conn, nombre, slug, duracion_min, clasificacion, genero, cover_image_url=None
+    conn,
+    nombre,
+    slug,
+    duracion_min,
+    clasificacion,
+    genero,
+    cover_image_url=None,
+    sinopsis=None,
+    director=None,
+    actores=None,
+    trailer_url=None,
+    tmdb_id=None,
 ):
+    # Los campos de enriquecimiento (sinopsis, director, actores, trailer_url,
+    # tmdb_id) no vienen de los scrapers de cadenas de cine: los llena aparte
+    # el script enriquecer_tmdb.py. Por eso usamos COALESCE: si esta llamada
+    # no trae el dato (viene en None), NO borramos lo que ya se había guardado.
     conn.execute(
         """
-        INSERT INTO peliculas (nombre, slug, duracion_min, clasificacion, genero, cover_image_url)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO peliculas (
+            nombre, slug, duracion_min, clasificacion, genero, cover_image_url,
+            sinopsis, director, actores, trailer_url, tmdb_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(slug) DO UPDATE SET
             nombre=excluded.nombre, duracion_min=excluded.duracion_min,
             clasificacion=excluded.clasificacion, genero=excluded.genero,
-            cover_image_url=COALESCE(excluded.cover_image_url, cover_image_url)
+            cover_image_url=COALESCE(excluded.cover_image_url, cover_image_url),
+            sinopsis=COALESCE(excluded.sinopsis, sinopsis),
+            director=COALESCE(excluded.director, director),
+            actores=COALESCE(excluded.actores, actores),
+            trailer_url=COALESCE(excluded.trailer_url, trailer_url),
+            tmdb_id=COALESCE(excluded.tmdb_id, tmdb_id)
     """,
-        (nombre, slug, duracion_min, clasificacion, genero, cover_image_url),
+        (
+            nombre,
+            slug,
+            duracion_min,
+            clasificacion,
+            genero,
+            cover_image_url,
+            sinopsis,
+            director,
+            actores,
+            trailer_url,
+            tmdb_id,
+        ),
     )
     row = conn.execute("SELECT id FROM peliculas WHERE slug = ?", (slug,)).fetchone()
     return row["id"]
