@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
-import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
@@ -188,7 +188,6 @@ export default function PeliculaDetalle() {
 
   return (
     <SafeAreaView style={styles.contenedor}>
-      <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" />
 
       {/* Header: volver + título + tabs */}

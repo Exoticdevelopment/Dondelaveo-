@@ -2,6 +2,7 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import SplashScreen from './splash';
@@ -37,16 +38,27 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ThemeProvider value={TEMA_APP}>
-      {mostrarSplash ? (
-        <SplashScreen />
-      ) : (
-        <Stack screenOptions={{ contentStyle: { backgroundColor: '#0F1420' } }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        </Stack>
-      )}
-      <StatusBar style="light" />
-    </ThemeProvider>
+    // View raíz con fondo oscuro: react-native-screens anima cada pantalla
+    // como su propia vista nativa, y mientras se desliza (push a "about",
+    // por ejemplo) queda un hueco que todavía no cubre ningún screen. Ese
+    // hueco deja ver lo que haya "detrás" en el árbol de RN. Sin esta View,
+    // lo que se ve detrás es la ventana nativa raíz, que es blanca por
+    // defecto — y en Expo Go no podemos cambiar eso vía app.json porque
+    // Expo Go corre un binario ya compilado por Expo. Esta View sí es JS,
+    // así que aplica al instante sin rebuild nativo.
+    <View style={{ flex: 1, backgroundColor: '#0F1420' }}>
+      <ThemeProvider value={TEMA_APP}>
+        {mostrarSplash ? (
+          <SplashScreen />
+        ) : (
+          <Stack screenOptions={{ contentStyle: { backgroundColor: '#0F1420' } }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="about" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
+        )}
+        <StatusBar style="light" />
+      </ThemeProvider>
+    </View>
   );
 }
