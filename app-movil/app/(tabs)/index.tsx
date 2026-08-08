@@ -6,7 +6,6 @@
 // controles pegada a la derecha, grid con padding-top 124 bajo el header).
 // ============================================================
 
-import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -20,11 +19,7 @@ import { useRouter } from "expo-router";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-
-// ------------------------------------------------------------
-// CONFIGURACIÓN: dirección de tu backend
-// ------------------------------------------------------------
-const API_URL = "http://192.168.1.13:8000";
+import { useCartelera, type Pelicula } from "../../contexts/cartelera-context";
 
 // ------------------------------------------------------------
 // PALETA DE COLORES (confirmados desde tailwind.config.ts del export)
@@ -35,21 +30,6 @@ const COLORES = {
   primarioOscuro: "#FC6D19",
   atenuado: "#637394",
   vidrio: "rgba(31,41,61,0.7)",
-};
-
-// ------------------------------------------------------------
-// TIPOS
-// ------------------------------------------------------------
-type Pelicula = {
-  id: number;
-  nombre: string;
-  slug: string;
-  genero: string | null;
-  clasificacion: string | null;
-  duracion_min: number | null;
-  cover_image_url: string | null;
-  tipo: "ESTRENO" | "PREVENTA" | "PROXIMAMENTE";
-  fecha_estreno: string | null;
 };
 
 // ------------------------------------------------------------
@@ -186,22 +166,12 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
 // PANTALLA PRINCIPAL
 // ------------------------------------------------------------
 export default function PantallaInicio() {
-  const [peliculas, setPeliculas] = useState<Pelicula[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch(`${API_URL}/home`)
-      .then((respuesta) => {
-        if (!respuesta.ok) {
-          throw new Error(`El backend respondió con error ${respuesta.status}`);
-        }
-        return respuesta.json();
-      })
-      .then((datos) => setPeliculas(datos))
-      .catch((err) => setError(err.message))
-      .finally(() => setCargando(false));
-  }, []);
+  // Para cuando esta pantalla se monta, el splash (en _layout.tsx) ya
+  // esperó a que la cartelera terminara de cargar — así que `cargando`
+  // acá prácticamente nunca es true. Lo dejamos como resguardo defensivo
+  // (ej. si el usuario reabre la app con datos ya en memoria pero algo
+  // dispara un refetch), no como el flujo normal.
+  const { peliculas, cargando, error } = useCartelera();
 
   // ----------------------------------------------------------
   // Sin early returns: el header (CinemaHeader) siempre se monta.
@@ -249,8 +219,11 @@ export default function PantallaInicio() {
 
   return (
     <View style={styles.contenedor}>
-      {contenido}
+      {/* CinemaHeader (con el logo) va primero en el árbol para que se
+          monte/pinte antes que la grilla — junto con el elevation de
+          barraFixedContainer, evita que el logo "aparezca al final". */}
       <CinemaHeader />
+      {contenido}
     </View>
   );
 }
@@ -281,6 +254,12 @@ const styles = StyleSheet.create({
     right: 0,
     height: 108,
     zIndex: 10,
+    // "elevation" es necesario en Android: ahí zIndex solo no garantiza
+    // que este header (con el logo) quede pintado por encima de la
+    // grilla (FlatList) y de los BlurView de las tarjetas. Sin esto,
+    // en algunos frames el header queda por debajo hasta el próximo
+    // repintado, dando la sensación de que "el logo carga al final".
+    elevation: 10,
   },
   blurFondo: {
     position: "absolute",
