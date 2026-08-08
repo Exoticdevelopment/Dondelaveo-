@@ -5,7 +5,8 @@
 // con el logo "¿Dónde la Veo?" centrado (242x242).
 // ============================================================
 
-import { View, Image, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Image } from "expo-image";
 import { BlurView } from "expo-blur";
 
 const COLORES = {
@@ -19,7 +20,9 @@ export default function SplashScreen() {
       <Image
         source={require("../assets/images/splash-background.png")}
         style={styles.fondo}
-        resizeMode="cover"
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={0}
       />
 
       <BlurView intensity={90} tint="dark" style={styles.overlay} />
@@ -28,7 +31,9 @@ export default function SplashScreen() {
         <Image
           source={require("../assets/images/splash-logo.png")}
           style={styles.logo}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={0}
         />
       </View>
     </View>

@@ -6,15 +6,16 @@
 // controles pegada a la derecha, grid con padding-top 124 bajo el header).
 // ============================================================
 
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
-  Image,
   FlatList,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -58,7 +59,9 @@ function CinemaHeader() {
         <Image
           source={require("../../assets/images/logo.png")}
           style={styles.logo}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={0}
         />
 
         <View style={styles.controlesFila}>
@@ -102,6 +105,57 @@ function TituloSeccion() {
   );
 }
 
+// Igual que el resto de la app (fetch de /home, prefetch de posters,
+// espera del trailer), ninguna carga de imagen puede quedar pegada para
+// siempre. El poster de cada tarjeta normalmente ya viene precargado
+// desde cartelera-context (Image.prefetch antes de ocultar el splash),
+// pero si esa precarga puntual falló o se agregó una película nueva
+// después del arranque, este <Image> hace su propio intento — y ese
+// intento SÍ necesita su propio timeout, o si la red va lenta se queda
+// girando (o de plano en blanco) sin nunca caer a un estado de error.
+const POSTER_TIMEOUT_MS = 8000;
+
+function PosterPelicula({ uri }: { uri: string }) {
+  const [estado, setEstado] = useState<"cargando" | "listo" | "error">("cargando");
+
+  useEffect(() => {
+    setEstado("cargando");
+    const temporizador = setTimeout(() => {
+      setEstado((actual) => (actual === "cargando" ? "error" : actual));
+    }, POSTER_TIMEOUT_MS);
+    return () => clearTimeout(temporizador);
+    // Si cambia la uri (ej. re-render con otra película en la misma
+    // posición de la lista), reinicia el intento desde cero.
+  }, [uri]);
+
+  if (estado === "error") {
+    return (
+      <View style={[styles.poster, styles.posterVacio]}>
+        <Text style={styles.posterVacioTexto}>No se pudo cargar</Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <Image
+        source={{ uri }}
+        style={styles.poster}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={150}
+        onLoadEnd={() => setEstado((actual) => (actual === "cargando" ? "listo" : actual))}
+        onError={() => setEstado("error")}
+      />
+      {estado === "cargando" ? (
+        <View style={[styles.poster, styles.posterCargando]}>
+          <ActivityIndicator size="small" color="#fff" />
+        </View>
+      ) : null}
+    </>
+  );
+}
+
 // ------------------------------------------------------------
 // COMPONENTE: MovieCard — chip naranja para estrenos, chip de vidrio
 // (BlurView) para preventas/próximamente.
@@ -128,11 +182,7 @@ function MovieCard({ pelicula }: { pelicula: Pelicula }) {
     >
       <View style={styles.posterContenedor}>
         {pelicula.cover_image_url ? (
-          <Image
-            source={{ uri: pelicula.cover_image_url }}
-            style={styles.poster}
-            resizeMode="cover"
-          />
+          <PosterPelicula uri={pelicula.cover_image_url} />
         ) : (
           <View style={[styles.poster, styles.posterVacio]}>
             <Text style={styles.posterVacioTexto}>Sin imagen</Text>
@@ -207,6 +257,17 @@ export default function PantallaInicio() {
         columnWrapperStyle={styles.fila}
         ListHeaderComponent={<TituloSeccion />}
         renderItem={({ item }) => <MovieCard pelicula={item} />}
+        // Todas las películas ya están precargadas (datos + posters) antes
+        // de llegar acá, así que no hace falta ser conservador con cuántas
+        // se pintan de una: mostrarlas todas de entrada evita el "pop-in"
+        // de tarjetas apareciendo mientras se hace scroll rápido.
+        initialNumToRender={peliculas.length}
+        // Las tarjetas fuera de pantalla no necesitan quedarse montadas
+        // (cada una tiene un BlurView en preventa/próximamente, que es
+        // relativamente costoso); desmontarlas libera memoria y trabajo
+        // de composición sin afectar la fluidez, porque sus imágenes ya
+        // están en caché (memory-disk) y vuelven a pintar al instante.
+        removeClippedSubviews
       />
     );
   } else {
@@ -379,6 +440,14 @@ const styles = StyleSheet.create({
   posterVacioTexto: {
     color: "#888",
     fontSize: 12,
+  },
+  posterCargando: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    backgroundColor: "#333",
+    justifyContent: "center",
+    alignItems: "center",
   },
   chipNaranja: {
     position: "absolute",

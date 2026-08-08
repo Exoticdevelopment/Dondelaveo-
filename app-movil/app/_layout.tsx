@@ -2,7 +2,8 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Image as RNImage } from 'react-native';
+import { Image } from 'expo-image';
 import 'react-native-reanimated';
 
 import SplashScreen from './splash';
@@ -18,6 +19,12 @@ export const unstable_settings = {
 // `mostrarSplash` abajo): así Home nunca llega a pintar su estado de
 // "Cargando cartelera...".
 const DURACION_SPLASH_MS = 2000;
+
+// Tope MÁXIMO absoluto: pase lo que pase (backend caído, sin wifi, una
+// imagen que nunca responde), el splash entra a la app igual después de
+// este tiempo. Sin esto, cualquier fetch/prefetch colgado deja el splash
+// pegado para siempre (fetch e Image.prefetch no tienen timeout propio).
+const DURACION_SPLASH_MAX_MS = 8000;
 
 // Toda la app usa el diseño oscuro de Figma (fondo #0F1420), sin importar
 // si el celular está en modo claro u oscuro. Antes usábamos DefaultTheme
@@ -36,6 +43,8 @@ const TEMA_APP = {
 
 function RootLayoutInterno() {
   const [tiempoMinimoListo, setTiempoMinimoListo] = useState(false);
+  const [tiempoMaximoSuperado, setTiempoMaximoSuperado] = useState(false);
+  const [logoHeaderListo, setLogoHeaderListo] = useState(false);
   const { cargando: cargandoCartelera } = useCartelera();
 
   useEffect(() => {
@@ -43,9 +52,45 @@ function RootLayoutInterno() {
     return () => clearTimeout(temporizador);
   }, []);
 
-  // El splash se queda mientras: no pasó el tiempo mínimo, O la
-  // cartelera (lista + detalle de cada película) todavía está cargando.
-  const mostrarSplash = !tiempoMinimoListo || cargandoCartelera;
+  useEffect(() => {
+    const temporizador = setTimeout(() => setTiempoMaximoSuperado(true), DURACION_SPLASH_MAX_MS);
+    return () => clearTimeout(temporizador);
+  }, []);
+
+  // Precarga del logo chiquito del header de Home (assets/images/logo.png).
+  // En desarrollo (Expo Go/Metro), las imágenes locales via require() NO
+  // van embebidas en el bundle: se piden por HTTP al servidor de Metro la
+  // primera vez que se usan, igual que una imagen de red. Sin esto, esa
+  // primera petición ocurre justo cuando se monta Home, y como ahí compite
+  // con los posters, el logo del header se ve aparecer "al final". Acá la
+  // adelantamos mientras se muestra el splash, y esperamos a que termine
+  // antes de ocultarlo (a diferencia de solo dispararla sin esperar).
+  useEffect(() => {
+    let cancelado = false;
+    const uri = RNImage.resolveAssetSource(require('../assets/images/logo.png')).uri;
+    Promise.race([
+      Image.prefetch(uri, "memory-disk"),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+    ])
+      .catch(() => {
+        // Si falla o tarda demasiado la precarga puntual del logo, no
+        // bloqueamos el arranque de la app por eso.
+      })
+      .finally(() => {
+        if (!cancelado) setLogoHeaderListo(true);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // El splash se queda mientras: no pasó el tiempo mínimo, O la cartelera
+  // (lista + detalle + posters de cada película) todavía está cargando,
+  // O el logo del header todavía no terminó de precargarse — PERO nunca
+  // más allá del tope máximo, así nunca queda pegado.
+  const mostrarSplash =
+    !tiempoMaximoSuperado &&
+    (!tiempoMinimoListo || cargandoCartelera || !logoHeaderListo);
 
   return (
     // View raíz con fondo oscuro: react-native-screens anima cada pantalla

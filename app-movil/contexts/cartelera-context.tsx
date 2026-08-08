@@ -11,9 +11,10 @@
 //
 // Ahora el RootLayout mantiene el splash visible hasta que este
 // contexto termina de cargar la cartelera COMPLETA (la lista + el
-// detalle de cada película, precargado en paralelo). Cuando el splash
-// se oculta, Home y las fichas ya tienen todo listo en `cache` y
-// pueden pintarse sin spinner.
+// detalle de cada película + el poster de cada película, todo
+// precargado en paralelo). Cuando el splash se oculta, Home y las
+// fichas ya tienen todo listo (datos e imágenes) y pueden pintarse
+// sin spinner ni posters apareciendo uno por uno.
 //
 // El detalle de una película puede además pedirse "a demanda" con
 // obtenerDetalle(slug): si ya está en cache lo devuelve al instante;
@@ -30,12 +31,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { Image } from "expo-image";
 
 // ------------------------------------------------------------
 // CONFIGURACIÓN: única fuente de la dirección del backend.
 // (Antes esta constante estaba duplicada en index.tsx y about.tsx.)
 // ------------------------------------------------------------
 const API_URL = "http://192.168.1.13:8000";
+
+// Ninguna promesa de red (fetch ni Image.prefetch) tiene timeout por
+// defecto en React Native: si el backend no responde (apagado, IP
+// cambiada, sin wifi), la promesa se queda pendiente PARA SIEMPRE y
+// el splash (que espera a que todo esto termine) se queda pegado.
+// Este helper le pone un límite: si no resuelve/rechaza en `ms`, la
+// da por fallida y sigue.
+const TIMEOUT_RED_MS = 8000;
+
+function conTimeout<T>(promesa: Promise<T>, ms: number = TIMEOUT_RED_MS): Promise<T> {
+  return Promise.race([
+    promesa,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Tiempo de espera agotado (${ms}ms)`)), ms)
+    ),
+  ]);
+}
 
 // ------------------------------------------------------------
 // TIPOS
@@ -96,7 +115,7 @@ export function CarteleraProvider({ children }: { children: ReactNode }) {
       return promesasEnCurso.current[slug];
     }
 
-    const promesa = fetch(`${API_URL}/peliculas/${slug}`)
+    const promesa = conTimeout(fetch(`${API_URL}/peliculas/${slug}`))
       .then((respuesta) => {
         if (!respuesta.ok) {
           throw new Error(`El backend respondió con error ${respuesta.status}`);
@@ -119,7 +138,7 @@ export function CarteleraProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelado = false;
 
-    fetch(`${API_URL}/home`)
+    conTimeout(fetch(`${API_URL}/home`))
       .then((respuesta) => {
         if (!respuesta.ok) {
           throw new Error(`El backend respondió con error ${respuesta.status}`);
@@ -133,15 +152,29 @@ export function CarteleraProvider({ children }: { children: ReactNode }) {
         // Precarga en paralelo del detalle de cada película (sinopsis,
         // director, reparto, trailer) para que al entrar a cualquier
         // ficha ya esté todo listo, sin su propio "Cargando...".
-        await Promise.all(
-          datos.map((p) =>
+        //
+        // Junto con eso, precargamos también el poster (cover_image_url)
+        // de cada película con Image.prefetch: así, cuando el splash se
+        // oculte, el grid de Home ya tiene las imágenes en cache y no
+        // hay "pop-in" de posters cargando uno por uno.
+        await Promise.all([
+          ...datos.map((p) =>
             obtenerDetalle(p.slug).catch(() => {
               // Si el detalle de UNA película falla, no bloqueamos el
               // resto de la app: esa ficha reintentará sola cuando el
               // usuario entre a ella (ver fallback en about.tsx).
             })
-          )
-        );
+          ),
+          ...datos
+            .filter((p) => !!p.cover_image_url)
+            .map((p) =>
+              conTimeout(Image.prefetch(p.cover_image_url!, "memory-disk")).catch(() => {
+                // Si un poster puntual falla o tarda demasiado, no
+                // bloqueamos el arranque por eso: esa tarjeta mostrará
+                // su placeholder y reintentará al re-renderizar.
+              })
+            ),
+        ]);
       })
       .catch((err) => {
         if (!cancelado) setError(err.message);
