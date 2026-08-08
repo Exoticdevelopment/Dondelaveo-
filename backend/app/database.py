@@ -9,6 +9,10 @@ o por defecto busca "cines.db" en el directorio desde el que se ejecuta uvicorn.
 import os
 import sqlite3
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DB_PATH = os.environ.get("CINES_DB_PATH", "cines.db")
 
 
