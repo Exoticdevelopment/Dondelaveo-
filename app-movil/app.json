@@ -7,9 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "appmovil",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#0F1420",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "backgroundColor": "#0F1420"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,8 +20,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "backgroundColor": "#0F1420",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.exoticdev777.appmovil"
     },
     "web": {
       "output": "static",
